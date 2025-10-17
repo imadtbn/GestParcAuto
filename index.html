@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام إدارة حضيرة السيارات</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -983,12 +985,24 @@
         }
         
         // تفعيل الكاميرا
-        function enableCamera() {
-            const cameraOverlay = document.getElementById('cameraOverlay');
-            cameraOverlay.innerHTML = `
-                <i class="fas fa-camera fa-3x"></i>
-                <p>جارٍ تفعيل الكاميرا...</p>
-            `;
+        async function enableCamera() {
+    const overlay = document.getElementById('cameraOverlay');
+    overlay.innerHTML = `<p>جارٍ تفعيل الكاميرا...</p>`;
+    
+    const video = document.createElement('video');
+    video.id = 'cameraFeed';
+    video.className = 'camera-feed';
+    document.querySelector('.camera-container').appendChild(video);
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.play();
+        overlay.style.display = 'none';
+    } catch (err) {
+        overlay.innerHTML = `<p>حدث خطأ في تشغيل الكاميرا</p>`;
+    }
+}
             
             // محاكاة تفعيل الكاميرا
             setTimeout(() => {
@@ -1000,19 +1014,31 @@
         }
         
         // مسح لوحة الترقيم
-        function scanPlate() {
-            const manualInput = document.getElementById('manualPlateInput').value.trim();
-            let plateNumber;
-            
-            if (manualInput) {
-                plateNumber = manualInput;
-            } else {
-                // محاكاة قراءة لوحة الترقيم (في الواقع سيتم قراءتها من الكاميرا)
-                plateNumber = generateRandomPlate();
-            }
-            
-            document.getElementById('platePreview').textContent = plateNumber;
-            
+       async function scanPlate() {
+    const video = document.getElementById('cameraFeed');
+    const manualInput = document.getElementById('manualPlateInput').value.trim();
+    let plateNumber = '';
+
+    if (manualInput) {
+        plateNumber = manualInput;
+    } else if (video) {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // تحليل النص في الصورة
+        const result = await Tesseract.recognize(canvas, 'eng+ara');
+        plateNumber = result.data.text.replace(/\s+/g, '').trim();
+    } else {
+        showAlert('لم يتم العثور على مصدر صورة صالح', 'danger');
+        return;
+    }
+
+    document.getElementById('platePreview').textContent = plateNumber || '--- ---';
+    checkPlateInDatabase(plateNumber);
+}     
             // البحث عن السيارة في قاعدة البيانات
             const matchedCar = carsData.find(car => 
                 car.registrationNumber === plateNumber
@@ -1267,6 +1293,32 @@
                 alertElement.style.display = 'none';
             }, 5000);
         }
+
+//مقارنه لوحات الترقيم 
+function checkPlateInDatabase(plateNumber) {
+    const matchResult = document.getElementById('matchResult');
+    const matchTitle = document.getElementById('matchTitle');
+    const matchDetails = document.getElementById('matchDetails');
+
+    const matchedCar = carsData.find(car => car.registrationNumber.replace(/\s+/g, '') === plateNumber);
+
+    if (matchedCar) {
+        matchResult.className = 'match-result match-success';
+        matchTitle.innerHTML = '<i class="fas fa-check-circle"></i> تم العثور على السيارة في قاعدة البيانات';
+        matchDetails.innerHTML = `
+            <p><strong>السائق:</strong> ${matchedCar.driverName}</p>
+            <p><strong>الوحدة:</strong> ${matchedCar.position}</p>
+            <p><strong>النوع:</strong> ${matchedCar.carName}</p>
+            <p><strong>العلامة:</strong> ${matchedCar.brand}</p>
+            <p><strong>الهاتف:</strong> ${matchedCar.phoneNumber}</p>
+        `;
+    } else {
+        matchResult.className = 'match-result match-fail';
+        matchTitle.innerHTML = '<i class="fas fa-exclamation-triangle"></i> غير مسجل';
+        matchDetails.innerHTML = `<p>اللوحة <strong>${plateNumber}</strong> غير موجودة بقاعدة البيانات.</p>`;
+    }
+    matchResult.style.display = 'block';
+}
     </script>
 </body>
 </html>
