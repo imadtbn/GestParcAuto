@@ -149,7 +149,7 @@
             color: var(--dark-color);
         }
         
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
@@ -158,7 +158,7 @@
             transition: var(--transition);
         }
         
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
             outline: none;
@@ -213,24 +213,6 @@
             color: white;
         }
         
-        .btn-filter {
-            background-color: var(--light-color);
-            color: var(--dark-color);
-            padding: 8px 12px;
-            font-size: 14px;
-            margin: 2px;
-        }
-        
-        .btn-filter:hover {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-        
-        .btn-filter.active {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-        
         .controls-header {
             display: flex;
             justify-content: space-between;
@@ -240,26 +222,17 @@
             border-bottom: 2px solid var(--light-color);
         }
         
-        .file-input {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: var(--light-color);
-            border-radius: 8px;
-        }
-        
-        .file-input label {
+        .controls-buttons {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: white;
-            transition: var(--transition);
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
         }
         
-        .file-input label:hover {
-            background-color: #f0f0f0;
+        .controls-buttons button {
+            width: 100%;
+            justify-content: flex-start;
+            padding: 15px;
         }
         
         table {
@@ -282,20 +255,26 @@
             font-weight: 600;
             position: sticky;
             top: 0;
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
         }
         
-        .filter-header {
-            background-color: var(--light-color);
-            padding: 10px;
-            text-align: center;
+        th:hover {
+            background-color: var(--dark-color);
         }
         
-        .filter-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            justify-content: center;
-            margin-top: 5px;
+        th i {
+            margin-left: 5px;
+            opacity: 0.7;
+        }
+        
+        .sort-asc i::before {
+            content: "\f0de";
+        }
+        
+        .sort-desc i::before {
+            content: "\f0dd";
         }
         
         tr {
@@ -304,7 +283,6 @@
         
         tr:hover {
             background-color: #f8f9fa;
-            transform: scale(1.01);
         }
         
         .actions {
@@ -408,47 +386,6 @@
             border-radius: 50%;
         }
         
-        .license-plate-section {
-            background-color: var(--light-color);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .camera-preview {
-            width: 100%;
-            max-width: 400px;
-            height: 200px;
-            background-color: #333;
-            margin: 0 auto 15px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .camera-preview::after {
-            content: "";
-            position: absolute;
-            width: 100%;
-            height: 4px;
-            background-color: var(--accent-color);
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            animation: scan 2s infinite linear;
-        }
-        
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-        
         .pulse {
             animation: pulse 2s infinite;
         }
@@ -480,58 +417,6 @@
         
         .form-full-width {
             grid-column: 1 / -1;
-        }
-        
-        /* تحسينات الجدول */
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-        
-        .table-header-row {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .table-filter-row {
-            background-color: var(--light-color);
-        }
-        
-        .table-filter-row select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .note-cell {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .note-cell:hover {
-            overflow: visible;
-            white-space: normal;
-            background-color: #f8f9fa;
-            z-index: 1;
-            position: relative;
-        }
-        
-        .edit-note-btn {
-            background: none;
-            border: none;
-            color: var(--secondary-color);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 4px 8px;
-        }
-        
-        .edit-note-btn:hover {
-            color: var(--primary-color);
         }
         
         /* كاميرا مسح لوحة الترقيم */
@@ -607,6 +492,40 @@
             border-radius: 4px;
         }
         
+        .note-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .note-cell:hover {
+            overflow: visible;
+            white-space: normal;
+            background-color: #f8f9fa;
+            z-index: 1;
+            position: relative;
+        }
+        
+        .edit-note-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+        }
+        
+        .edit-note-btn:hover {
+            color: var(--primary-color);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
@@ -627,10 +546,6 @@
             
             .car-form-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .filter-buttons {
-                flex-direction: column;
             }
             
             .actions {
@@ -665,27 +580,25 @@
             <div class="controls-panel slide-in">
                 <div class="controls-header">
                     <h2><i class="fas fa-cogs"></i> إدارة البيانات</h2>
-                    <button class="btn-success" onclick="openAddCarModal()"><i class="fas fa-plus-circle"></i> إضافة سيارة جديدة</button>
                 </div>
                 
-                <div class="file-input">
-                    <label for="fileInput">
-                        <i class="fas fa-file-excel"></i>
-                        <span>تحميل بيانات من ملف Excel</span>
-                    </label>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
-                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button onclick="loadExcelFile()"><i class="fas fa-upload"></i> تحميل البيانات</button>
-                        <button class="btn-success" onclick="exportToExcel()"><i class="fas fa-download"></i> حفظ البيانات إلى Excel</button>
-                    </div>
-                </div>
-                
-                <div class="license-plate-section">
-                    <h3><i class="fas fa-camera"></i> التعرف على لوحة الترقيم</h3>
-                    <div class="camera-preview">
-                        <p>نظام التعرف على لوحات السيارات</p>
-                    </div>
-                    <button class="pulse" onclick="openPlateScanner()"><i class="fas fa-barcode"></i> مسح لوحة الترقيم</button>
+                <div class="controls-buttons">
+                    <button class="btn-success" onclick="openAddCarModal()">
+                        <i class="fas fa-plus-circle"></i> إضافة سيارة جديدة
+                    </button>
+                    
+                    <button onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-file-excel"></i> تحميل بيانات من ملف Excel
+                    </button>
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;" onchange="loadExcelFile()">
+                    
+                    <button class="btn-success" onclick="exportToExcel()">
+                        <i class="fas fa-download"></i> حفظ البيانات إلى Excel
+                    </button>
+                    
+                    <button class="pulse" onclick="openPlateScanner()">
+                        <i class="fas fa-camera"></i> مسح لوحة الترقيم
+                    </button>
                 </div>
                 
                 <div id="alertMessage" class="alert"></div>
@@ -697,11 +610,663 @@
                 <div class="table-container">
                     <table id="carsTable">
                         <thead>
-                            <tr class="table-header-row">
-                                <th>إسم مستخدم المركبة</th>
-                                <th>الوحدة/المصلحة</th>
-                                <th>نوع المركبة</th>
-                                <th>العلامة التجارية</th>
-                                <th>رقم تسجيل المركبة</th>
-                                <th>هاتف المستخدم</th>
-                     
+                            <tr>
+                                <th data-column="driverName" onclick="sortTable('driverName')">
+                                    إسم مستخدم المركبة <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-column="position" onclick="sortTable('position')">
+                                    الوحدة/المصلحة <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-column="carName" onclick="sortTable('carName')">
+                                    نوع المركبة <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-column="brand" onclick="sortTable('brand')">
+                                    العلامة التجارية <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-column="registrationNumber" onclick="sortTable('registrationNumber')">
+                                    رقم تسجيل المركبة <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-column="phoneNumber" onclick="sortTable('phoneNumber')">
+                                    هاتف المستخدم <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-column="note" onclick="sortTable('note')">
+                                    الملاحظة <i class="fas fa-sort"></i>
+                                </th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carsTableBody">
+                            <!-- البيانات ستضاف هنا ديناميكياً -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لإضافة سيارة جديدة -->
+    <div class="modal" id="addCarModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-car"></i> إضافة سيارة جديدة</h3>
+                <button class="close-btn" onclick="closeModal('addCarModal')">&times;</button>
+            </div>
+            <form id="carForm">
+                <div class="car-form-grid">
+                    <div class="form-group form-full-width">
+                        <label for="driverName"><i class="fas fa-user"></i> إسم مستخدم المركبة</label>
+                        <input type="text" id="driverName" required>
+                    </div>
+                    
+                    <div class="form-group form-full-width">
+                        <label for="position"><i class="fas fa-briefcase"></i> الوحدة/المصلحة</label>
+                        <input type="text" id="position" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="brand"><i class="fas fa-tag"></i> نوع المركبة</label>
+                        <select id="brand" required onchange="updateCarModels()">
+                            <option value="">اختر نوع المركبة</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="carName"><i class="fas fa-car"></i> اسم المركبة</label>
+                        <select id="carName" required>
+                            <option value="">اختر اسم المركبة</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registrationNumber"><i class="fas fa-id-card"></i> رقم تسجيل المركبة</label>
+                        <input type="text" id="registrationNumber" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phoneNumber"><i class="fas fa-phone"></i> هاتف المستخدم</label>
+                        <input type="text" id="phoneNumber" required>
+                    </div>
+                    
+                    <div class="form-group form-full-width">
+                        <label for="note"><i class="fas fa-sticky-note"></i> الملاحظة</label>
+                        <textarea id="note" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="submit" class="btn-success"><i class="fas fa-plus"></i> إضافة مركبة</button>
+                    <button type="button" class="btn-outline" onclick="closeModal('addCarModal')"><i class="fas fa-times"></i> إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal للتأكيد على الحذف -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تأكيد الحذف</h3>
+                <button class="close-btn" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <p>هل أنت متأكد من أنك تريد حذف هذه السيارة؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="modal-footer">
+                <button class="btn-danger" id="confirmDelete">نعم، احذف</button>
+                <button class="btn-outline" onclick="closeModal('deleteModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لتحرير الملاحظة -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sticky-note"></i> تحرير الملاحظة</h3>
+                <button class="close-btn" onclick="closeModal('noteModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="noteText">الملاحظة:</label>
+                <textarea id="noteText" rows="5"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-success" id="saveNote"><i class="fas fa-save"></i> حفظ</button>
+                <button class="btn-outline" onclick="closeModal('noteModal')"><i class="fas fa-times"></i> إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لمسح لوحة الترقيم -->
+    <div class="modal" id="plateScannerModal">
+        <div class="modal-content camera-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> مسح لوحة الترقيم</h3>
+                <button class="close-btn" onclick="closeModal('plateScannerModal')">&times;</button>
+            </div>
+            
+            <div class="camera-container">
+                <div class="camera-overlay" id="cameraOverlay">
+                    <i class="fas fa-camera fa-3x"></i>
+                    <p>جارٍ تحميل الكاميرا...</p>
+                    <button class="btn-success" id="enableCameraBtn" style="margin-top: 15px; display: none;">
+                        <i class="fas fa-camera"></i> تفعيل الكاميرا
+                    </button>
+                </div>
+                <!-- سيكون هذا العنصر للكاميرا الحقيقية لو كانت متوفرة -->
+                <!-- <video id="cameraFeed" class="camera-feed" autoplay playsinline></video> -->
+            </div>
+            
+            <div class="plate-preview" id="platePreview">--- ---</div>
+            
+            <div class="form-group">
+                <label for="manualPlateInput">أو أدخل رقم اللوحة يدويًا:</label>
+                <input type="text" id="manualPlateInput" placeholder="أدخل رقم اللوحة">
+            </div>
+            
+            <div class="match-result" id="matchResult">
+                <h4 id="matchTitle"></h4>
+                <div id="matchDetails" class="match-details"></div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-success" onclick="scanPlate()"><i class="fas fa-camera"></i> مسح اللوحة</button>
+                <button class="btn-outline" onclick="closeModal('plateScannerModal')"><i class="fas fa-times"></i> إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // تخزين البيانات في مصفوفة
+        let carsData = [];
+        let currentEditIndex = -1;
+        let currentNoteEditIndex = -1;
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        
+        // بيانات العلامات التجارية والطرازات
+        const carBrandsAndModels = {
+            "تويوتا": ["ياريس", "كورولا", "كامري", "افالون", "RAV4", "هايلكس", "لاند كروزر", "برادو", "فورتشنر", "هايس", "سوبرا"],
+            "هيونداي": ["سوناتا", "إلنترا", "اكسنت", "توسان", "سانتا في", "كريتا", "فيرنا", "باليسايد", "أيونيك 5", "أيونيك 6"],
+            "نيسان": ["صني", "التيما", "اكستيرا", "باترول", "جوك", "اكس-تريل", "سنترا", "زد", "ليف", "تيتان"],
+            "هوندا": ["سيفيك", "أكورد", "كرايسد", "بي إل في", "أوديسي", "CR-V", "HR-V", "بايلوت"],
+            "شيفروليه": ["كروز", "ماليبو", "أوبترا", "كابتيفا", "تاهو", "سوبربان", "سلفرادو", "سبارك", "بولت EV", "ترافرس"],
+            "فورد": ["فيوجن", "فوكس", "موستانج", "إكسبلورر", "إيدج", "إسكيب", "رانجر", "برونكو", "F-150", "مونديو"],
+            "مرسيدس": ["الفئة A", "الفئة B", "الفئة C", "الفئة E", "الفئة S", "GLA", "GLB", "GLC", "GLE", "GLS", "EQE", "EQS"],
+            "بي إم دبليو": ["السلسلة 1", "السلسلة 3", "السلسلة 5", "السلسلة 7", "X1", "X3", "X5", "X7", "i4", "iX"],
+            "أودي": ["A1", "A3", "A4", "A6", "A8", "Q3", "Q5", "Q7", "Q8", "e-tron"],
+            "كيا": ["بيكانتو", "ريو", "سيراتو", "سبورتاج", "سورينتو", "كارنفال", "سلتوس", "EV6"],
+            "بيجو": ["206", "207", "301", "308", "3008", "5008", "508"],
+            "رونو": ["كليو", "سامبول", "ميغان", "كابتور", "داستر", "تاليزمان", "كانغو"],
+            "داسيا": ["لوغان", "سانديرو", "داستر", "جوغر"],
+            "فيات": ["500", "باندا", "تيبو", "دوبلو", "فولاجو", "بوينتو"],
+            "فولكسفاغن": ["غولف", "باسات", "جيتا", "تيغوان", "توارغ", "بولو", "ID.4"],
+            "سكودا": ["أوكتافيا", "سوبرب", "كاروك", "كودياك", "فابيا"],
+            "جيلي": ["كولراي", "توجيلا", "إمغراند", "بينراي", "أوكافانغو"],
+            "إم جي": ["MG3", "MG5", "MG6", "ZS", "HS", "RX5", "MG4"],
+            "تسلا": ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck"],
+            "شيري": ["أريزو 5", "أريزو 6", "تيغو 2", "تيغو 4", "تيغو 7", "تيغو 8"],
+            "هافال": ["H2", "H6", "H9", "جوليون", "دغو"],
+            "سانغ يونغ": ["كوراندو", "تيفولي", "ريكستون", "موسو"],
+            "مازدا": ["مازدا 2", "مازدا 3", "مازدا 6", "CX-3", "CX-5", "CX-9"],
+            "سوبارو": ["إمبريزا", "فوريستر", "أوتباك", "XV", "WRX"],
+            "جيب": ["رينغيد", "كومباس", "شيروكي", "جراند شيروكي", "راغلر"],
+            "كرايسلر": ["300", "باسيفيكا", "فوييجر"],
+            "دودج": ["تشالنجر", "تشارجر", "دورانغو", "رم 1500"],
+            "لينكولن": ["كونتيننتال", "نوتيلوس", "أفياتور", "نافيغيتور"],
+            "بروتون": ["بيرسونا", "ساجا", "إكسورا", "إكس 70"]
+        };
+        
+        // تحميل البيانات من localStorage عند بدء التشغيل
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedData = localStorage.getItem('carsData');
+            if (savedData) {
+                carsData = JSON.parse(savedData);
+                renderTable();
+            }
+            
+            // تعبئة قائمة العلامات التجارية
+            populateBrands();
+            
+            // إعداد حدث لحفظ الملاحظة
+            document.getElementById('saveNote').addEventListener('click', saveNote);
+            
+            // إعداد حدث لتفعيل الكاميرا
+            document.getElementById('enableCameraBtn').addEventListener('click', enableCamera);
+        });
+        
+        // تعبئة قائمة العلامات التجارية
+        function populateBrands() {
+            const brandSelect = document.getElementById('brand');
+            brandSelect.innerHTML = '<option value="">اختر العلامة التجارية</option>';
+            
+            Object.keys(carBrandsAndModels).sort().forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand;
+                option.textContent = brand;
+                brandSelect.appendChild(option);
+            });
+        }
+        
+        // تحديث قائمة الطرازات بناءً على العلامة المختارة
+        function updateCarModels() {
+            const brandSelect = document.getElementById('brand');
+            const carNameSelect = document.getElementById('carName');
+            const selectedBrand = brandSelect.value;
+            
+            carNameSelect.innerHTML = '<option value="">اختر اسم المركبة</option>';
+            
+            if (selectedBrand && carBrandsAndModels[selectedBrand]) {
+                carBrandsAndModels[selectedBrand].sort().forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    carNameSelect.appendChild(option);
+                });
+            }
+        }
+        
+        // ترتيب الجدول
+        function sortTable(column) {
+            // إعادة تعيين أيقونات الترتيب
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // إذا كان العمود نفسه يتم النقر عليه مرة أخرى، عكس الاتجاه
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            
+            // إضافة الفئة المناسبة للعمود النشط
+            const activeTh = document.querySelector(`th[data-column="${column}"]`);
+            activeTh.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // ترتيب البيانات
+            carsData.sort((a, b) => {
+                let valueA = a[column] || '';
+                let valueB = b[column] || '';
+                
+                if (typeof valueA === 'string') {
+                    valueA = valueA.toLowerCase();
+                    valueB = valueB.toLowerCase();
+                }
+                
+                if (valueA < valueB) {
+                    return sortDirection === 'asc' ? -1 : 1;
+                }
+                if (valueA > valueB) {
+                    return sortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+            
+            renderTable();
+        }
+        
+        // البحث في البيانات
+        function searchData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                renderTable();
+                return;
+            }
+            
+            const filteredData = carsData.filter(car => 
+                car.driverName.toLowerCase().includes(searchTerm) ||
+                car.position.toLowerCase().includes(searchTerm) ||
+                car.brand.toLowerCase().includes(searchTerm) ||
+                car.carName.toLowerCase().includes(searchTerm) ||
+                car.registrationNumber.toLowerCase().includes(searchTerm) ||
+                car.phoneNumber.toLowerCase().includes(searchTerm) ||
+                (car.note && car.note.toLowerCase().includes(searchTerm))
+            );
+            
+            renderTable(filteredData);
+        }
+        
+        // عرض البيانات في الجدول
+        function renderTable(data = carsData) {
+            const tableBody = document.getElementById('carsTableBody');
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="8" style="text-align: center; padding: 30px;">لا توجد بيانات لعرضها</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            data.forEach((car, index) => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${car.driverName}</td>
+                    <td>${car.position}</td>
+                    <td>${car.carName}</td>
+                    <td>${car.brand}</td>
+                    <td>${car.registrationNumber}</td>
+                    <td>${car.phoneNumber}</td>
+                    <td class="note-cell">
+                        ${car.note ? car.note : ''}
+                        <button class="edit-note-btn" onclick="editNote(${index})"><i class="fas fa-edit"></i></button>
+                    </td>
+                    <td class="actions">
+                        <button class="action-btn" onclick="editCar(${index})"><i class="fas fa-edit"></i> تعديل</button>
+                        <button class="action-btn btn-danger" onclick="confirmDelete(${index})"><i class="fas fa-trash"></i> حذف</button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // فتح نافذة إضافة سيارة جديدة
+        function openAddCarModal() {
+            document.getElementById('carForm').reset();
+            currentEditIndex = -1;
+            document.getElementById('addCarModal').style.display = 'flex';
+        }
+        
+        // فتح نافذة مسح لوحة الترقيم
+        function openPlateScanner() {
+            document.getElementById('plateScannerModal').style.display = 'flex';
+            document.getElementById('manualPlateInput').value = '';
+            document.getElementById('matchResult').style.display = 'none';
+            document.getElementById('enableCameraBtn').style.display = 'block';
+            
+            // محاكاة تحميل الكاميرا
+            setTimeout(() => {
+                document.querySelector('.camera-overlay p').textContent = 'انقر على "تفعيل الكاميرا" لبدء المسح';
+            }, 1000);
+        }
+        
+        // تفعيل الكاميرا
+        function enableCamera() {
+            const cameraOverlay = document.getElementById('cameraOverlay');
+            cameraOverlay.innerHTML = `
+                <i class="fas fa-camera fa-3x"></i>
+                <p>جارٍ تفعيل الكاميرا...</p>
+            `;
+            
+            // محاكاة تفعيل الكاميرا
+            setTimeout(() => {
+                cameraOverlay.innerHTML = `
+                    <i class="fas fa-check-circle fa-3x"></i>
+                    <p>الكاميرا جاهزة للاستخدام</p>
+                `;
+            }, 2000);
+        }
+        
+        // مسح لوحة الترقيم
+        function scanPlate() {
+            const manualInput = document.getElementById('manualPlateInput').value.trim();
+            let plateNumber;
+            
+            if (manualInput) {
+                plateNumber = manualInput;
+            } else {
+                // محاكاة قراءة لوحة الترقيم (في الواقع سيتم قراءتها من الكاميرا)
+                plateNumber = generateRandomPlate();
+            }
+            
+            document.getElementById('platePreview').textContent = plateNumber;
+            
+            // البحث عن السيارة في قاعدة البيانات
+            const matchedCar = carsData.find(car => 
+                car.registrationNumber === plateNumber
+            );
+            
+            const matchResult = document.getElementById('matchResult');
+            const matchTitle = document.getElementById('matchTitle');
+            const matchDetails = document.getElementById('matchDetails');
+            
+            if (matchedCar) {
+                matchResult.className = 'match-result match-success';
+                matchTitle.innerHTML = '<i class="fas fa-check-circle"></i> تم العثور على السيارة في قاعدة البيانات';
+                matchDetails.innerHTML = `
+                    <p><strong>اسم السائق:</strong> ${matchedCar.driverName}</p>
+                    <p><strong>المصلحة:</strong> ${matchedCar.position}</p>
+                    <p><strong>نوع السيارة:</strong> ${matchedCar.carName}</p>
+                    <p><strong>العلامة التجارية:</strong> ${matchedCar.brand}</p>
+                    <p><strong>رقم الهاتف:</strong> ${matchedCar.phoneNumber}</p>
+                `;
+            } else {
+                matchResult.className = 'match-result match-fail';
+                matchTitle.innerHTML = '<i class="fas fa-exclamation-triangle"></i> تحذير: لم يتم العثور على السيارة في قاعدة البيانات';
+                matchDetails.innerHTML = `
+                    <p>لوحة الترقيم <strong>${plateNumber}</strong> غير مسجلة في قاعدة البيانات.</p>
+                    <p>يرجى التحقق من صحة اللوحة أو إضافة السيارة إلى قاعدة البيانات.</p>
+                `;
+            }
+            
+            matchResult.style.display = 'block';
+        }
+        
+        // توليد رقم لوحة عشوائي للمحاكاة
+        function generateRandomPlate() {
+            const letters = 'أبتثجحخدذرزسشصضطظعغفقكلمنهوي';
+            let plate = '';
+            
+            // إضافة 3 أحرف عربية عشوائية
+            for (let i = 0; i < 3; i++) {
+                plate += letters.charAt(Math.floor(Math.random() * letters.length));
+            }
+            
+            // إضافة 3 أرقام عشوائية
+            plate += ' ' + Math.floor(100 + Math.random() * 900);
+            
+            return plate;
+        }
+        
+        // إغلاق النافذة المنبثقة
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // إضافة سيارة جديدة
+        document.getElementById('carForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const driverName = document.getElementById('driverName').value;
+            const position = document.getElementById('position').value;
+            const brand = document.getElementById('brand').value;
+            const carName = document.getElementById('carName').value;
+            const registrationNumber = document.getElementById('registrationNumber').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const note = document.getElementById('note').value;
+            
+            const car = {
+                driverName,
+                position,
+                brand,
+                carName,
+                registrationNumber,
+                phoneNumber,
+                note
+            };
+            
+            if (currentEditIndex === -1) {
+                // إضافة سيارة جديدة
+                carsData.push(car);
+                showAlert('تم إضافة السيارة بنجاح', 'success');
+            } else {
+                // تعديل سيارة موجودة
+                carsData[currentEditIndex] = car;
+                showAlert('تم تعديل السيارة بنجاح', 'success');
+            }
+            
+            // حفظ البيانات في localStorage
+            localStorage.setItem('carsData', JSON.stringify(carsData));
+            
+            // تحديث الجدول
+            renderTable();
+            
+            // إغلاق النافذة المنبثقة
+            closeModal('addCarModal');
+        });
+        
+        // تحرير سيارة
+        function editCar(index) {
+            const car = carsData[index];
+            
+            document.getElementById('driverName').value = car.driverName;
+            document.getElementById('position').value = car.position;
+            document.getElementById('brand').value = car.brand;
+            
+            // تحديث قائمة الطرازات بناءً على العلامة المختارة
+            updateCarModels();
+            setTimeout(() => {
+                document.getElementById('carName').value = car.carName;
+            }, 100);
+            
+            document.getElementById('registrationNumber').value = car.registrationNumber;
+            document.getElementById('phoneNumber').value = car.phoneNumber;
+            document.getElementById('note').value = car.note || '';
+            
+            currentEditIndex = index;
+            document.getElementById('addCarModal').style.display = 'flex';
+        }
+        
+        // تحرير الملاحظة
+        function editNote(index) {
+            const car = carsData[index];
+            document.getElementById('noteText').value = car.note || '';
+            currentNoteEditIndex = index;
+            document.getElementById('noteModal').style.display = 'flex';
+        }
+        
+        // حفظ الملاحظة
+        function saveNote() {
+            if (currentNoteEditIndex !== -1) {
+                const noteText = document.getElementById('noteText').value;
+                carsData[currentNoteEditIndex].note = noteText;
+                
+                // حفظ البيانات في localStorage
+                localStorage.setItem('carsData', JSON.stringify(carsData));
+                
+                // تحديث الجدول
+                renderTable();
+                
+                showAlert('تم حفظ الملاحظة بنجاح', 'success');
+                closeModal('noteModal');
+            }
+        }
+        
+        // تأكيد الحذف
+        function confirmDelete(index) {
+            currentEditIndex = index;
+            document.getElementById('deleteModal').style.display = 'flex';
+            
+            document.getElementById('confirmDelete').onclick = function() {
+                deleteCar(currentEditIndex);
+            };
+        }
+        
+        // حذف سيارة
+        function deleteCar(index) {
+            carsData.splice(index, 1);
+            
+            // حفظ البيانات في localStorage
+            localStorage.setItem('carsData', JSON.stringify(carsData));
+            
+            // تحديث الجدول
+            renderTable();
+            
+            showAlert('تم حذف السيارة بنجاح', 'success');
+            closeModal('deleteModal');
+        }
+        
+        // تحميل ملف Excel
+        function loadExcelFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showAlert('يرجى اختيار ملف Excel', 'danger');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // افتراض أن الورقة الأولى تحتوي على البيانات
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                // تحويل البيانات إلى التنسيق المطلوب
+                const importedData = jsonData.map(row => {
+                    return {
+                        driverName: row['إسم مستخدم المركبة'] || '',
+                        position: row['الوحدة/المصلحة'] || '',
+                        brand: row['العلامة التجارية'] || '',
+                        carName: row['نوع المركبة'] || '',
+                        registrationNumber: row['رقم تسجيل المركبة'] || '',
+                        phoneNumber: row['هاتف المستخدم'] || '',
+                        note: row['الملاحظة'] || ''
+                    };
+                });
+                
+                // دمج البيانات المستوردة مع البيانات الحالية
+                carsData = [...carsData, ...importedData];
+                
+                // حفظ البيانات في localStorage
+                localStorage.setItem('carsData', JSON.stringify(carsData));
+                
+                // تحديث الجدول
+                renderTable();
+                
+                showAlert('تم تحميل البيانات بنجاح', 'success');
+                fileInput.value = '';
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // تصدير البيانات إلى Excel
+        function exportToExcel() {
+            if (carsData.length === 0) {
+                showAlert('لا توجد بيانات لتصديرها', 'danger');
+                return;
+            }
+            
+            // تحضير البيانات للتصدير
+            const exportData = carsData.map(car => ({
+                'إسم مستخدم المركبة': car.driverName,
+                'الوحدة/المصلحة': car.position,
+                'العلامة التجارية': car.brand,
+                'نوع المركبة': car.carName,
+                'رقم تسجيل المركبة': car.registrationNumber,
+                'هاتف المستخدم': car.phoneNumber,
+                'الملاحظة': car.note || ''
+            }));
+            
+            // إنشاء ورقة عمل
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'بيانات السيارات');
+            
+            // تصدير الملف
+            XLSX.writeFile(workbook, 'بيانات_السيارات.xlsx');
+            
+            showAlert('تم تصدير البيانات بنجاح', 'success');
+        }
+        
+        // عرض رسالة تنبيه
+        function showAlert(message, type) {
+            const alertElement = document.getElementById('alertMessage');
+            alertElement.textContent = message;
+            alertElement.className = `alert alert-${type}`;
+            alertElement.style.display = 'block';
+            
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
