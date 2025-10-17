@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>نظام إدارة حضيرة السيارات</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 
+    <!-- مكتبات -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.3.2/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -16,94 +18,368 @@
             --success-color: #2ecc71;
             --light-color: #ecf0f1;
             --dark-color: #34495e;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
             --transition: all 0.3s ease;
         }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: #333;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            background: linear-gradient(to right, var(--primary-color), var(--dark-color));
-            color: white;
-            padding: 15px 0;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: var(--shadow);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-        }
-        
-        .logo {
-            height: 70px;
-            transition: var(--transition);
-        }
-        
-        .logo:hover {
-            transform: scale(1.05);
-        }
-        
-        .header-center {
-            text-align: center;
-            flex-grow: 1;
-            padding: 0 20px;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header-center p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .search-header {
-            background-color: rgba(255, 255, 255, 0.15);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            backdrop-filter: blur(5px);
-        }
-        
-        .search-box {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .search-box input {
-            flex-grow: 1;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 30px;
-            font-size: 16px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif}
+        body{background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);color:#333;min-height:100vh;line-height:1.6}
+        .container{max-width:1400px;margin:0 auto;padding:20px}
+        header{background:linear-gradient(to right,var(--primary-color),var(--dark-color));color:#fff;padding:15px 0;border-radius:12px;margin-bottom:25px;box-shadow:var(--shadow);position:relative}
+        .header-content{display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:15px}
+        .logo{height:70px;transition:var(--transition)}
+        .logo:hover{transform:scale(1.05)}
+        .header-center{text-align:center;flex-grow:1;padding:0 20px}
+        h1{font-size:2.2rem;margin-bottom:5px;text-shadow:2px 2px 4px rgba(0,0,0,0.3)}
+        .search-header{background-color:rgba(255,255,255,0.15);padding:10px;border-radius:8px;margin-top:12px;backdrop-filter:blur(4px)}
+        .search-box{display:flex;gap:10px}
+        .search-box input{flex:1;padding:10px 12px;border:none;border-radius:30px;font-size:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .main-content{display:flex;flex-wrap:wrap;gap:25px}
+        .controls-panel{flex:1;min-width:320px;background:white;padding:20px;border-radius:12px;box-shadow:var(--shadow)}
+        .data-panel{flex:2;min-width:600px;background:white;padding:20px;border-radius:12px;box-shadow:var(--shadow)}
+        .controls-buttons{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+        button{background:var(--secondary-color);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:15px;transition:var(--transition);display:inline-flex;align-items:center;gap:8px}
+        button:hover{background:var(--primary-color);transform:translateY(-2px)}
+        .btn-danger{background:var(--accent-color)}
+        .btn-success{background:var(--success-color)}
+        .btn-outline{background:transparent;border:2px solid var(--secondary-color);color:var(--secondary-color)}
+        .table-container{overflow-x:auto;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{padding:12px;text-align:right;border-bottom:1px solid #e0e0e0;vertical-align:middle}
+        th{background:var(--primary-color);color:#fff;font-weight:600;position:sticky;top:0;cursor:pointer}
+        tr:hover{background:#f8f9fa}
+        .actions{display:flex;gap:8px}
+        .action-btn{padding:8px 12px;font-size:14px}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center}
+        .modal-content{background:#fff;padding:22px;border-radius:12px;width:90%;max-width:800px;box-shadow:0 5px 15px rgba(0,0,0,0.2);max-height:90vh;overflow:auto}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #eee}
+        .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+        .close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#777}
+        .camera-container{position:relative;width:100%;height:340px;background:#000;border-radius:8px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center}
+        .camera-feed{width:100%;height:100%;object-fit:cover}
+        .camera-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;backdrop-filter: blur(2px)}
+        .plate-preview{background:#fff;color:#000;padding:8px 14px;border-radius:4px;font-size:20px;font-weight:700;letter-spacing:2px;text-align:center}
+        .match-result{padding:12px;border-radius:8px;margin-top:12px;display:none}
+        .match-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+        .match-fail{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+        .match-details{margin-top:10px;padding:10px;background:#f8f9fa;border-radius:6px}
+        .note-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .note-cell:hover{overflow:visible;white-space:normal;position:relative;background:#f8f9fa;z-index:2}
+        @media (max-width:768px){.main-content{flex-direction:column}.controls-panel,.data-panel{min-width:100%}.header-content{flex-direction:column}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="https://via.placeholder.com/150x70/2c3e50/ffffff?text=شعار+الشركة" alt="شعار" class="logo">
+                <div class="header-center">
+                    <h1>نظام إدارة حضيرة السيارات</h1>
+                    <p>إدارة وتتبع معلومات السيارات والسائقين</p>
+                    <div class="search-header">
+                        <div class="search-box">
+                            <input id="searchInput" type="text" placeholder="ابحث بأي معلومة (اسم السائق، رقم التسجيل، النوع، العلامة...)">
+                            <button onclick="searchData()"><i class="fas fa-search"></i> بحث</button>
+                        </div>
+                    </div>
+                </div>
+                <img src="https://via.placeholder.com/150x70/3498db/ffffff?text=النظام" alt="شعار النظام" class="logo">
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <h2><i class="fas fa-cogs"></i> إدارة البيانات</h2>
+                </div>
+
+                <div class="controls-buttons">
+                    <button class="btn-success" onclick="openAddCarModal()"><i class="fas fa-plus-circle"></i> إضافة سيارة جديدة</button>
+                    <button onclick="document.getElementById('fileInput').click()"><i class="fas fa-file-excel"></i> تحميل من Excel</button>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="loadExcelFile()">
+                    <button class="btn-success" onclick="exportToExcel()"><i class="fas fa-download"></i> تصدير إلى Excel</button>
+
+                    <div style="display:flex;gap:8px;flex-direction:column">
+                        <button onclick="openPlateScanner()"><i class="fas fa-camera"></i> مسح لوحة الترقيم (كاميرا)</button>
+                        <button onclick="document.getElementById('uploadImageInput').click()"><i class="fas fa-image"></i> تحليل صورة من المعرض</button>
+                        <input type="file" id="uploadImageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+                    </div>
+                </div>
+
+                <div id="alertMessage" class="alert" style="display:none"></div>
+            </div>
+
+            <div class="data-panel">
+                <h2><i class="fas fa-database"></i> قاعدة بيانات السيارات</h2>
+                <div class="table-container">
+                    <table id="carsTable">
+                        <thead>
+                            <tr>
+                                <th data-column="driverName" onclick="sortTable('driverName')">إسم مستخدم المركبة <i class="fas fa-sort"></i></th>
+                                <th data-column="position" onclick="sortTable('position')">الوحدة/المصلحة <i class="fas fa-sort"></i></th>
+                                <th data-column="carName" onclick="sortTable('carName')">نوع المركبة <i class="fas fa-sort"></i></th>
+                                <th data-column="brand" onclick="sortTable('brand')">العلامة التجارية <i class="fas fa-sort"></i></th>
+                                <th data-column="registrationNumber" onclick="sortTable('registrationNumber')">رقم تسجيل المركبة <i class="fas fa-sort"></i></th>
+                                <th data-column="phoneNumber" onclick="sortTable('phoneNumber')">هاتف المستخدم <i class="fas fa-sort"></i></th>
+                                <th data-column="note" onclick="sortTable('note')">الملاحظة <i class="fas fa-sort"></i></th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="addCarModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-car"></i> إضافة / تعديل سيارة</h3>
+                <button class="close-btn" onclick="closeModal('addCarModal')">&times;</button>
+            </div>
+            <form id="carForm">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div>
+                        <label>إسم مستخدم المركبة</label>
+                        <input id="driverName" required type="text" />
+                    </div>
+                    <div>
+                        <label>الوحدة/المصلحة</label>
+                        <input id="position" required type="text" />
+                    </div>
+                    <div>
+                        <label>العلامة التجارية</label>
+                        <select id="brand" required onchange="updateCarModels()"></select>
+                    </div>
+                    <div>
+                        <label>نوع المركبة</label>
+                        <select id="carName" required></select>
+                    </div>
+                    <div>
+                        <label>رقم تسجيل المركبة</label>
+                        <input id="registrationNumber" required type="text" />
+                    </div>
+                    <div>
+                        <label>هاتف المستخدم</label>
+                        <input id="phoneNumber" required type="text" />
+                    </div>
+                    <div style="grid-column:1/3">
+                        <label>الملاحظة</label>
+                        <textarea id="note" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn-success"><i class="fas fa-plus"></i> حفظ</button>
+                    <button type="button" class="btn-outline" onclick="closeModal('addCarModal')">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تأكيد الحذف</h3>
+                <button class="close-btn" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <p>هل أنت متأكد من حذف هذه السيارة؟</p>
+            <div class="modal-footer">
+                <button class="btn-danger" id="confirmDelete">نعم، احذف</button>
+                <button class="btn-outline" onclick="closeModal('deleteModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sticky-note"></i> تحرير الملاحظة</h3>
+                <button class="close-btn" onclick="closeModal('noteModal')">&times;</button>
+            </div>
+            <div>
+                <label>الملاحظة</label>
+                <textarea id="noteText" rows="6"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-success" id="saveNote">حفظ</button>
+                <button class="btn-outline" onclick="closeModal('noteModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plate Scanner Modal -->
+    <div class="modal" id="plateScannerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> مسح لوحة الترقيم</h3>
+                <button class="close-btn" onclick="closeModal('plateScannerModal')">&times;</button>
+            </div>
+
+            <div class="camera-container" id="cameraContainer">
+                <div class="camera-overlay" id="cameraOverlay">
+                    <i class="fas fa-camera fa-3x"></i>
+                    <p id="cameraOverlayText">انقر تفعيل الكاميرا لبدء المسح</p>
+                    <div style="margin-top:12px;display:flex;gap:8px">
+                        <button class="btn-success" id="enableCameraBtn" onclick="enableCamera()">تفعيل الكاميرا</button>
+                        <button class="btn-outline" id="stopCameraBtn" onclick="stopCamera()" style="display:none">إيقاف الكاميرا</button>
+                    </div>
+                </div>
+                <!-- عنصر الفيديو سيُضاف ديناميكياً -->
+            </div>
+
+            <div style="margin-top:8px">
+                <div class="plate-preview" id="platePreview">--- ---</div>
+            </div>
+
+            <div style="margin-top:8px">
+                <label>أو أدخل رقم اللوحة يدوياً:</label>
+                <input type="text" id="manualPlateInput" placeholder="أدخل رقم اللوحة" />
+            </div>
+
+            <div class="match-result" id="matchResult">
+                <h4 id="matchTitle"></h4>
+                <div id="matchDetails" class="match-details"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-success" onclick="scanPlate()"><i class="fas fa-camera"></i> مسح</button>
+                <button class="btn-outline" onclick="closeModal('plateScannerModal')">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+/* ===================== بيانات ومساعدة عامة ===================== */
+let carsData = [];
+let currentEditIndex = -1;
+let currentNoteEditIndex = -1;
+let sortColumn = null;
+let sortDirection = 'asc';
+let localStorageKey = 'carsData_v1';
+let videoStream = null;
+
+/* علامات تجارية وطرازات (مأخوذة من السكربت الأصلي) */
+const carBrandsAndModels = {
+    "تويوتا": ["ياريس","كورولا","كامري","افالون","RAV4","هايلكس","لاند كروزر","برادو","فورتشنر"],
+    "هيونداي": ["سوناتا","إلنترا","اكسنت","توسان","سانتا في","كريتا"],
+    "نيسان": ["صني","التيما","باترول","جوك","اكس-تريل","سنترا"],
+    "هوندا": ["سيفيك","أكورد","CR-V","HR-V"],
+    "شيفروليه": ["كروز","ماليبو","كابتيفا","سلفرادو"],
+    "مرسيدس": ["الفئة A","الفئة C","الفئة E","الفئة S"],
+    "بي إم دبليو": ["السلسلة 1","السلسلة 3","السلسلة 5","X5"],
+    "أودي": ["A3","A4","A6","Q5"],
+    "كيا": ["ريو","سبورتاج","سورينتو"],
+    "بيجو": ["206","308","3008"],
+    "تسلا": ["Model 3","Model Y","Model S"]
+};
+
+/* ===================== تحميل وحفظ البيانات ===================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(localStorageKey);
+    if (saved) carsData = JSON.parse(saved);
+    populateBrands();
+    renderTable();
+    document.getElementById('saveNote').addEventListener('click', saveNote);
+});
+
+/* تعبئة العلامات */
+function populateBrands(){
+    const brandSelect = document.getElementById('brand');
+    brandSelect.innerHTML = '<option value="">اختر العلامة التجارية</option>';
+    Object.keys(carBrandsAndModels).sort().forEach(b => {
+        const opt = document.createElement('option'); opt.value = b; opt.textContent = b; brandSelect.appendChild(opt);
+    });
+}
+
+/* تحديث الطرازات */
+function updateCarModels(){
+    const brand = document.getElementById('brand').value;
+    const carName = document.getElementById('carName');
+    carName.innerHTML = '<option value="">اختر اسم المركبة</option>';
+    if (brand && carBrandsAndModels[brand]) {
+        carBrandsAndModels[brand].sort().forEach(m => {
+            const o = document.createElement('option'); o.value = m; o.textContent = m; carName.appendChild(o);
+        });
+    }
+}
+
+/* حفظ محلي */
+function saveLocal(){
+    localStorage.setItem(localStorageKey, JSON.stringify(carsData));
+}
+
+/* ===================== عرض، بحث، ترتيب ===================== */
+function renderTable(data = carsData){
+    const tbody = document.getElementById('carsTableBody');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0){
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="8" style="text-align:center;padding:30px">لا توجد بيانات لعرضها</td>`;
+        tbody.appendChild(row);
+        return;
+    }
+    data.forEach((car, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${escapeHtml(car.driverName||'')}</td>
+            <td>${escapeHtml(car.position||'')}</td>
+            <td>${escapeHtml(car.carName||'')}</td>
+            <td>${escapeHtml(car.brand||'')}</td>
+            <td>${escapeHtml(car.registrationNumber||'')}</td>
+            <td>${escapeHtml(car.phoneNumber||'')}</td>
+            <td class="note-cell">
+                ${car.note ? escapeHtml(car.note) : ''}
+                <button class="edit-note-btn" onclick="editNote(${idx})" style="margin-right:6px;background:none;border:none;color:var(--secondary-color);cursor:pointer"><i class="fas fa-edit"></i></button>
+            </td>
+            <td class="actions">
+                <button class="action-btn" onclick="editCar(${idx})"><i class="fas fa-edit"></i> تعديل</button>
+                <button class="action-btn btn-danger" onclick="confirmDelete(${idx})"><i class="fas fa-trash"></i> حذف</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function searchData(){
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (!q){ renderTable(); return; }
+    const filtered = carsData.filter(car =>
+        (car.driverName||'').toLowerCase().includes(q) ||
+        (car.position||'').toLowerCase().includes(q) ||
+        (car.brand||'').toLowerCase().includes(q) ||
+        (car.carName||'').toLowerCase().includes(q) ||
+        (car.registrationNumber||'').toLowerCase().includes(q) ||
+        (car.phoneNumber||'').toLowerCase().includes(q) ||
+        (car.note||'').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+}
+
+function sortTable(column){
+    // reset classes
+    document.querySelectorAll('th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
+    if (sortColumn === column) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    else { sortColumn = column; sortDirection = 'asc'; }
+    const activeTh = document.querySelector(`th[data-column="${column}"]`);
+    if (activeTh) activeTh.classList.add(sortDirection==='asc'?'sort-asc':'sort-desc');
+
+    carsData.sort((a,b)=>{
+        let A = (a[column]||'').toString().toLowerCase();
+        let B = (b[column]||'').toString().toLowerCase();
+        if (A < B) return sortDirection==='asc'? -1:1;
+        if (A > B) return sortDirection==='asc'? 1:-1;
+        return 0;
+    });
+    renderTable();
+}
+
+/* ===================== إضافة            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
         .main-content {
