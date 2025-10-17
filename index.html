@@ -885,9 +885,9 @@ function displayPlateAndCheck(plate){
     const title = document.getElementById('matchTitle');
     const det = document.getElementById('matchDetails');
 
-    const cleaned = (plate||'').replace(/\s+/g,'').trim();
-    preview.textContent = cleaned || '--- ---';
-
+   const cleaned = (plate || '').replace(/\s+/g, '').trim();
+const formatted = cleaned.replace(/^(\d{2})(\d{3})(\d{6})$/, '$1 $2 $3');
+    
     if (!cleaned){
         result.style.display = 'block'; result.className = 'match-result match-fail';
         title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> لم يتم استخراج نص صالح';
