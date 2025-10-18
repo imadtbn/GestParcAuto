@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام مراقبة مواقف السيارات - ANPR مع YOLO محسن</title>
+    <title>نظام مراقبة مواقف السيارات - ANPR محسن</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
     <script async src="https://docs.opencv.org/4.5.5/opencv.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <!-- مكتبة yolo-tfjs كبديل لـ tf-yolov5.js -->
-    <script src="https://cdn.jsdelivr.net/npm/yolo-tfjs@0.0.2/dist/index.umd.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: linear-gradient(to bottom, #f4f4f4, #e9ecef); }
         .container { max-width: 1200px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
@@ -19,34 +16,36 @@
         video, canvas { border: 2px solid #007bff; margin: 10px 0; max-width: 100%; border-radius: 8px; }
         button { padding: 12px 24px; margin: 5px; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; border-radius: 6px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
         button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,123,255,0.3); }
-        select { padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #007bff; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-        th { background: linear-gradient(135deg, #e9ecef, #f8f9fa); font-weight: bold; }
-        input[type="text"], input[type="file"] { padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #007bff; width: 300px; }
+        select, input[type="text"], input[type="file"] { padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #007bff; width: 300px; }
         #result { font-size: 20px; font-weight: bold; margin: 15px 0; padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; color: #155724; }
         .section { margin: 25px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
-        .loading { text-align: center; color: #007bff; font-style: italic; }
-        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; border-radius: 6px; margin: 10px 0; display: none; }
+        /* نافذة منبثقة */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; width: 80%; max-width: 500px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-content input { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .modal-content button { width: 48%; margin: 5px; }
         @media (max-width: 768px) { 
             .container { margin: 10px; padding: 15px; } 
             header { flex-direction: column; text-align: center; } 
-            video, canvas { width: 100%; height: auto; } 
-            input[type="text"] { width: 100%; } 
-            select { width: 100%; }
+            video, canvas, select, input[type="text"], input[type="file"] { width: 100%; height: auto; } 
+            .modal-content { width: 90%; }
         }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background: linear-gradient(135deg, #e9ecef, #f8f9fa); font-weight: bold; }
     </style>
 </head>
 <body>
     <header>
         <img src="https://via.placeholder.com/150x60.png?text=شعار+يمين" alt="شعار يمين">
-        <h1>نظام مراقبة مواقف السيارات مع YOLO محسن</h1>
+        <h1>نظام مراقبة مواقف السيارات</h1>
         <img src="https://via.placeholder.com/150x60.png?text=شعار+يسار" alt="شعار يسار">
     </header>
     <div class="container">
-        <!-- قسم الكاميرا والـ ANPR مع YOLO -->
+        <!-- قسم الكاميرا والـ ANPR -->
         <section class="section">
-            <h2>الكشف عن لوحة السيارة باستخدام YOLO</h2>
+            <h2>الكشف عن لوحة السيارة</h2>
             <label for="cameraSelect">اختر الكاميرا:</label>
             <select id="cameraSelect" onchange="changeCamera()">
                 <option value="environment">الكاميرا الخلفية (موصى بها)</option>
@@ -54,14 +53,11 @@
             </select>
             <video id="video" width="640" height="480" autoplay></video>
             <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
-            <canvas id="yoloCanvas" width="640" height="480" style="border: 2px solid #28a745; display:none;"></canvas>
             <br>
             <button onclick="startCamera()">بدء الكاميرا</button>
-            <button onclick="scanPlateWithYOLO()">مسح اللوحة بـ YOLO</button>
-            <button onclick="scanPlateWithOpenCV()">مسح اللوحة بـ OpenCV (بديل)</button>
+            <button onclick="scanPlate()">مسح اللوحة</button>
             <div id="result"></div>
-            <div id="loading" class="loading" style="display:none;">جاري تحميل نموذج YOLO...</div>
-            <div id="error" class="error" style="display:none;"></div>
+            <div id="error" class="error"></div>
         </section>
         
         <!-- قسم البحث -->
@@ -74,6 +70,7 @@
         <section class="section">
             <h2>قاعدة بيانات السيارات المسموح بها</h2>
             <input type="file" id="fileInput" accept=".xlsx" onchange="loadExcel(event)">
+            <button onclick="openAddCarModal()">إضافة سيارة</button>
             <button onclick="exportExcel()">تصدير Excel</button>
             <table id="allowedTable">
                 <thead><tr><th>رقم اللوحة</th><th>المالك</th><th>نوع السيارة</th><th>مكان العمل</th><th>رقم الهاتف</th><th>ملاحظات</th><th>وقت الدخول</th><th>الإجراءات</th></tr></thead>
@@ -92,176 +89,96 @@
             </table>
         </section>
     </div>
+
+    <!-- نافذة منبثقة لإضافة سيارة -->
+    <div id="addCarModal" class="modal">
+        <div class="modal-content">
+            <h2>إضافة سيارة جديدة</h2>
+            <input type="text" id="newPlate" placeholder="رقم اللوحة" required>
+            <input type="text" id="newOwner" placeholder="المالك">
+            <input type="text" id="newCarType" placeholder="نوع السيارة">
+            <input type="text" id="newWorkplace" placeholder="مكان العمل">
+            <input type="text" id="newPhone" placeholder="رقم الهاتف">
+            <input type="text" id="newNotes" placeholder="ملاحظات">
+            <button onclick="saveNewCar()">حفظ</button>
+            <button onclick="closeAddCarModal()">إلغاء</button>
+        </div>
+    </div>
+
     <footer>
-        <p>نظام مراقبة مواقف السيارات باستخدام ANPR و YOLO | © 2025 | مدعوم بـ TensorFlow.js</p>
+        <p>نظام مراقبة مواقف السيارات باستخدام ANPR | © 2025 | مدعوم بـ OpenCV.js و Tesseract.js</p>
     </footer>
 
     <script>
         let video = document.getElementById('video');
         let canvas = document.getElementById('canvas');
-        let yoloCanvas = document.getElementById('yoloCanvas');
         let ctx = canvas.getContext('2d');
-        let yoloCtx = yoloCanvas.getContext('2d');
         let stream;
-        let db = []; // قاعدة البيانات (Allowed + Blacklist)
-        let blacklist = []; // القائمة السوداء
-        let model; // نموذج YOLO
-        let isYoloLoaded = false;
-        let currentFacingMode = 'environment'; // افتراضي: خلفية
+        let db = JSON.parse(localStorage.getItem('parkingDB')) || []; // قاعدة البيانات
+        let blacklist = JSON.parse(localStorage.getItem('blacklist')) || []; // القائمة السوداء
+        let isOpenCVLoaded = false;
 
         // تحميل OpenCV.js
         cv['onRuntimeInitialized'] = () => {
+            isOpenCVLoaded = true;
             console.log('OpenCV.js جاهز');
         };
-
-        // تحميل نموذج YOLOv5 باستخدام yolo-tfjs
-        async function loadYoloModel() {
-            if (isYoloLoaded) return model;
-            document.getElementById('loading').style.display = 'block';
-            try {
-                // استخدام مكتبة yolo-tfjs لتحميل YOLOv5n (يمكن تغيير إلى مسار محلي)
-                const modelUrl = 'https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov5n.tfjs'; // نموذج افتراضي، غيّره إذا لزم
-                model = await YOLOTf.loadYoloModel(modelUrl, ['car', 'truck'], { // فئات COCO ذات الصلة
-                    yoloVersion: 'v5',
-                    onProgress: (fraction) => console.log('تحميل النموذج: ' + (fraction * 100) + '%')
-                });
-                isYoloLoaded = true;
-                document.getElementById('loading').style.display = 'none';
-                console.log('نموذج YOLO جاهز');
-            } catch (err) {
-                document.getElementById('error').innerHTML = 'خطأ في تحميل YOLO: ' + err.message + '. استخدم OpenCV كبديل.';
-                document.getElementById('error').style.display = 'block';
-                isYoloLoaded = false;
-            }
-        }
 
         // تغيير الكاميرا
         async function changeCamera() {
             const select = document.getElementById('cameraSelect');
-            currentFacingMode = select.value;
+            const currentFacingMode = select.value;
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }
-            await startCamera();
+            await startCamera(currentFacingMode);
         }
 
-        // بدء الكاميرا مع دعم الكاميرا الخلفية
-        async function startCamera() {
+        // بدء الكاميرا
+        async function startCamera(facingMode = 'environment') {
             try {
-                // التحقق من الأجهزة المتاحة
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const hasBackCamera = devices.some(device => device.kind === 'videoinput' && device.label.includes('back') || device.deviceId);
-                
                 const constraints = {
                     video: {
-                        facingMode: { exact: currentFacingMode }, // 'environment' للخلفية، 'user' للأمامية
+                        facingMode: { ideal: facingMode },
                         width: { ideal: 640 },
                         height: { ideal: 480 }
                     }
                 };
-                
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-                await loadYoloModel(); // تحميل YOLO عند بدء الكاميرا
             } catch (err) {
-                // Fallback إذا لم تتوفر الكاميرا المحددة
                 const fallbackConstraints = { video: true };
                 stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-                video.srcObject = stream;
                 document.getElementById('error').innerHTML = 'تم استخدام كاميرا افتراضية: ' + err.message;
                 document.getElementById('error').style.display = 'block';
             }
         }
 
-        // مسح اللوحة باستخدام YOLO + OpenCV + Tesseract
-        async function scanPlateWithYOLO() {
-            if (!video.srcObject || !model) {
-                alert('ابدأ الكاميرا وانتظر تحميل YOLO!');
-                return;
-            }
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            yoloCtx.drawImage(video, 0, 0, yoloCanvas.width, yoloCanvas.height);
-            
-            // YOLO كشف السيارة
-            const results = await model.predict(yoloCanvas); // استخدام API المكتبة الجديدة
-            let plateRegion = null;
-            
-            // استخراج bounding box لأول سيارة مكتشفة
-            if (results && results.length > 0) {
-                const detection = results[0]; // افتراض أول كشف
-                const x = detection.box.x * canvas.width;
-                const y = detection.box.y * canvas.height;
-                const w = detection.box.width * canvas.width;
-                const h = detection.box.height * canvas.height;
-                // افتراض اللوحة في أسفل السيارة
-                const plateY = y + h * 0.8;
-                const plateH = h * 0.15;
-                plateRegion = new cv.Rect(x, plateY, w, plateH);
-                
-                // رسم bounding box
-                yoloCtx.strokeStyle = 'red';
-                yoloCtx.lineWidth = 2;
-                yoloCtx.strokeRect(x, plateY, w, plateH);
-                yoloCanvas.style.display = 'block';
-            }
-
-            if (!plateRegion) {
-                document.getElementById('result').innerHTML = 'لم يتم كشف سيارة أو لوحة!';
-                return;
-            }
-
-            // باقي المعالجة كما سابقًا (OpenCV + Tesseract)
-            let src = cv.imread(canvas);
-            let plateImg = src.roi(plateRegion);
-            let gray = new cv.Mat();
-            let blurred = new cv.Mat();
-            let edges = new cv.Mat();
-            cv.cvtColor(plateImg, gray, cv.COLOR_RGBA2GRAY);
-            cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-            cv.Canny(blurred, edges, 50, 150);
-            cv.imshow(canvas, edges);
-
-            const imageData = canvas.toDataURL('image/png');
-            src.delete(); plateImg.delete(); gray.delete(); blurred.delete(); edges.delete();
-
-            try {
-                const worker = await Tesseract.createWorker('eng', 1);
-                await worker.setParameters({
-                    tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- '
-                });
-                const { data: { text } } = await worker.recognize(imageData);
-                await worker.terminate();
-
-                const plate = text.trim().replace(/\s+/g, '').toUpperCase();
-                document.getElementById('result').innerHTML = `اللوحة المكتشفة بـ YOLO: ${plate || 'لم يتم التعرف'}`;
-                
-                if (plate) {
-                    checkParkingStatus(plate);
-                }
-            } catch (err) {
-                alert('خطأ في التعرف: ' + err.message);
-            }
-        }
-
-        // مسح بـ OpenCV فقط (بديل)
-        async function scanPlateWithOpenCV() {
+        // مسح اللوحة باستخدام OpenCV + Tesseract
+        async function scanPlate() {
             if (!video.srcObject) {
                 alert('ابدأ الكاميرا أولاً!');
                 return;
             }
+            if (!isOpenCVLoaded) {
+                alert('OpenCV.js لم يُحمّل بعد، جرب لاحقًا!');
+                return;
+            }
+
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             let src = cv.imread(canvas);
             
+            // معالجة محسنة لتحسين دقة OCR
             let gray = new cv.Mat();
             let blurred = new cv.Mat();
-            let edges = new cv.Mat();
+            let thresh = new cv.Mat();
             cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
             cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-            cv.Canny(blurred, edges, 50, 150);
-            cv.imshow(canvas, edges);
+            cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
+            cv.imshow(canvas, thresh);
 
             const imageData = canvas.toDataURL('image/png');
-            src.delete(); gray.delete(); blurred.delete(); edges.delete();
+            src.delete(); gray.delete(); blurred.delete(); thresh.delete();
 
             try {
                 const worker = await Tesseract.createWorker('eng', 1);
@@ -272,17 +189,18 @@
                 await worker.terminate();
 
                 const plate = text.trim().replace(/\s+/g, '').toUpperCase();
-                document.getElementById('result').innerHTML = `اللوحة المكتشفة بـ OpenCV: ${plate || 'لم يتم التعرف'}`;
+                document.getElementById('result').innerHTML = `اللوحة المكتشفة: ${plate || 'لم يتم التعرف'}`;
                 
                 if (plate) {
                     checkParkingStatus(plate);
                 }
             } catch (err) {
-                alert('خطأ في التعرف: ' + err.message);
+                document.getElementById('error').innerHTML = 'خطأ في التعرف: ' + err.message;
+                document.getElementById('error').style.display = 'block';
             }
         }
 
-        // باقي الدوال (checkParkingStatus, loadExcel, displayAllowedTable, إلخ) كما هي في النسخة السابقة
+        // التحقق من حالة الموقف
         function checkParkingStatus(plate) {
             const blacklistEntry = blacklist.find(row => row.Plate.toUpperCase() === plate);
             if (blacklistEntry) {
@@ -292,6 +210,7 @@
             const entry = db.find(row => row.Plate.toUpperCase() === plate);
             if (entry && entry.Status === 'Allowed') {
                 entry.EntryTime = new Date().toLocaleString();
+                saveToLocalStorage();
                 document.getElementById('result').innerHTML += `<br>حالة الموقف: مصرح - مالك: ${entry.Owner}`;
                 displayAllowedTable();
             } else {
@@ -299,6 +218,7 @@
             }
         }
 
+        // تحميل Excel
         function loadExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -310,6 +230,7 @@
                 db = XLSX.utils.sheet_to_json(sheet);
                 blacklist = db.filter(row => row.Status === 'Blocked');
                 db = db.filter(row => row.Status !== 'Blocked');
+                saveToLocalStorage();
                 displayAllowedTable();
                 displayBlacklistTable();
                 alert('تم تحميل القاعدة بنجاح! عدد السجلات: ' + (db.length + blacklist.length));
@@ -317,6 +238,13 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // حفظ إلى localStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('parkingDB', JSON.stringify(db));
+            localStorage.setItem('blacklist', JSON.stringify(blacklist));
+        }
+
+        // عرض جدول السيارات المسموح بها
         function displayAllowedTable(filter = null) {
             const tbody = document.querySelector('#allowedTable tbody');
             tbody.innerHTML = '';
@@ -341,6 +269,7 @@
             });
         }
 
+        // عرض جدول القائمة السوداء
         function displayBlacklistTable() {
             const tbody = document.querySelector('#blacklistTable tbody');
             tbody.innerHTML = '';
@@ -353,6 +282,7 @@
             });
         }
 
+        // تعديل سجل
         function editRow(index) {
             const row = db[index];
             const newPlate = prompt('رقم اللوحة:', row.Plate);
@@ -361,26 +291,32 @@
             const newWorkplace = prompt('مكان العمل:', row.Workplace);
             const newPhone = prompt('رقم الهاتف:', row.Phone);
             const newNotes = prompt('ملاحظات:', row.Notes);
-            if (newPlate) db[index] = { 
-                Plate: newPlate, 
-                Owner: newOwner || '', 
-                CarType: newCarType || '', 
-                Workplace: newWorkplace || '', 
-                Phone: newPhone || '', 
-                Notes: newNotes || '', 
-                Status: row.Status, 
-                EntryTime: row.EntryTime || '' 
-            };
-            displayAllowedTable();
-        }
-
-        function deleteRow(index) {
-            if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
-                db.splice(index, 1);
+            if (newPlate) {
+                db[index] = { 
+                    Plate: newPlate, 
+                    Owner: newOwner || '', 
+                    CarType: newCarType || '', 
+                    Workplace: newWorkplace || '', 
+                    Phone: newPhone || '', 
+                    Notes: newNotes || '', 
+                    Status: row.Status, 
+                    EntryTime: row.EntryTime || '' 
+                };
+                saveToLocalStorage();
                 displayAllowedTable();
             }
         }
 
+        // حذف سجل
+        function deleteRow(index) {
+            if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+                db.splice(index, 1);
+                saveToLocalStorage();
+                displayAllowedTable();
+            }
+        }
+
+        // إضافة إلى القائمة السوداء
         function addToBlacklist() {
             const plate = document.getElementById('blacklistPlate').value.trim().toUpperCase();
             if (!plate) {
@@ -390,21 +326,26 @@
             const notes = prompt('أدخل ملاحظات (اختياري):', '');
             blacklist.push({ Plate: plate, Notes: notes, Status: 'Blocked' });
             document.getElementById('blacklistPlate').value = '';
+            saveToLocalStorage();
             displayBlacklistTable();
         }
 
+        // حذف من القائمة السوداء
         function deleteFromBlacklist(index) {
             if (confirm('هل أنت متأكد من حذف هذه اللوحة من القائمة السوداء؟')) {
                 blacklist.splice(index, 1);
+                saveToLocalStorage();
                 displayBlacklistTable();
             }
         }
 
+        // محرك البحث
         function searchDatabase() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             displayAllowedTable(query);
         }
 
+        // تصدير Excel
         function exportExcel() {
             const combinedDb = [...db, ...blacklist];
             const ws = XLSX.utils.json_to_sheet(combinedDb);
@@ -412,6 +353,51 @@
             XLSX.utils.book_append_sheet(wb, ws, 'ParkingDB');
             XLSX.writeFile(wb, 'parking_updated.xlsx');
         }
+
+        // إدارة النافذة المنبثقة
+        function openAddCarModal() {
+            document.getElementById('addCarModal').style.display = 'block';
+            document.getElementById('newPlate').focus();
+        }
+
+        function closeAddCarModal() {
+            document.getElementById('addCarModal').style.display = 'none';
+            document.getElementById('newPlate').value = '';
+            document.getElementById('newOwner').value = '';
+            document.getElementById('newCarType').value = '';
+            document.getElementById('newWorkplace').value = '';
+            document.getElementById('newPhone').value = '';
+            document.getElementById('newNotes').value = '';
+        }
+
+        function saveNewCar() {
+            const plate = document.getElementById('newPlate').value.trim().toUpperCase();
+            if (!plate) {
+                alert('رقم اللوحة مطلوب!');
+                return;
+            }
+            const newCar = {
+                Plate: plate,
+                Owner: document.getElementById('newOwner').value || '',
+                CarType: document.getElementById('newCarType').value || '',
+                Workplace: document.getElementById('newWorkplace').value || '',
+                Phone: document.getElementById('newPhone').value || '',
+                Notes: document.getElementById('newNotes').value || '',
+                Status: 'Allowed',
+                EntryTime: ''
+            };
+            db.push(newCar);
+            saveToLocalStorage();
+            displayAllowedTable();
+            closeAddCarModal();
+            alert('تم إضافة السيارة بنجاح!');
+        }
+
+        // تحميل البيانات من localStorage عند بدء الصفحة
+        window.onload = function() {
+            displayAllowedTable();
+            displayBlacklistTable();
+        };
     </script>
 </body>
 </html>
