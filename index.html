@@ -1,472 +1,939 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>نظام تتبع حضيرة السيارات — Auto OpenCV + OCR</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نظام تتبع حضيرة السيارات — Auto OpenCV + OCR</title>
 
-<!-- مكتبات -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.3.2/dist/tesseract.min.js"></script>
-<script async src="https://docs.opencv.org/4.7.0/opencv.js" type="text/javascript"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  
+  <!-- مكتبات -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.3.2/dist/tesseract.min.js"></script>
+  <script async src="https://docs.opencv.org/4.7.0/opencv.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<style>
-:root{--p:#0f172a;--s:#2563eb;--a:#ef4444}
-*{box-sizing:border-box;font-family:Inter,Segoe UI,Tahoma,Arial}
-body{margin:0;background:linear-gradient(180deg,#f0f4ff,#ffffff);color:#111;padding:18px}
-.container{max-width:1200px;margin:0 auto}
-.header{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,var(--p),#111827);color:#fff;padding:12px;border-radius:8px}
-.grid{display:grid;grid-template-columns:320px 1fr;gap:16px;margin-top:16px}
-.card{background:#fff;padding:14px;border-radius:8px;box-shadow:0 6px 18px rgba(16,24,40,.04)}
-.controls button{width:100%;margin-bottom:8px;padding:10px;border-radius:8px;border:none;background:var(--s);color:#fff;cursor:pointer}
-.icon-btn{background:transparent;border:1px solid #e6eefc;padding:8px;border-radius:8px;cursor:pointer}
-.table-wrap{overflow:auto;max-height:560px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #eef2ff;text-align:right}
-th{background:var(--p);color:#fff;position:sticky;top:0}
-.preview-plate{font-weight:800;font-size:20px;letter-spacing:2px;background:#0f172a;color:#fff;padding:8px;border-radius:6px;display:inline-block}
-.camera-area{background:#000;border-radius:8px;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-.hidden{display:none}
-.badge{display:inline-block;padding:6px 10px;border-radius:8px;background:#e6eefc;color:#0f172a;font-weight:700}
-.modal{display:none;position:fixed;inset:0;background:rgba(2,6,23,.45);align-items:center;justify-content:center;z-index:60}
-.dialog{width:94%;max-width:860px;background:#fff;padding:16px;border-radius:10px}
-.small{display:flex;gap:8px}
-.note{max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.blacklist{color:#fff;background:var(--a);padding:6px 8px;border-radius:6px}
-</style>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #3498db;
+      --accent: #e74c3c;
+      --success: #2ecc71;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --warning: #f39c12;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+    
+    .navbar-brand {
+      font-weight: 700;
+    }
+    
+    .card {
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .btn-primary {
+      background-color: var(--secondary);
+      border-color: var(--secondary);
+    }
+    
+    .btn-danger {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+    
+    .btn-warning {
+      background-color: var(--warning);
+      border-color: var(--warning);
+    }
+    
+    .table th {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .badge {
+      font-size: 0.8rem;
+    }
+    
+    .camera-area {
+      background: #000;
+      border-radius: 8px;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justifyify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .preview-plate {
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: 2px;
+      background: var(--primary);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: inline-block;
+      text-align: center;
+    }
+    
+    .blacklist-item {
+      background: var(--accent);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+    
+    .status-online {
+      background-color: var(--success);
+    }
+    
+    .status-offline {
+      background-color: var(--accent);
+    }
+    
+    .note-cell {
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      color: white;
+      border-radius: 8px;
+    }
+    
+    .progress-ring {
+      width: 60px;
+      height: 60px;
+    }
+    
+    .progress-ring-circle {
+      stroke-dasharray: 157;
+      stroke-dashoffset: 157;
+      animation: progress 1.5s ease-in-out infinite;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    
+    @keyframes progress {
+      0% { stroke-dashoffset: 157; }
+      50% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -157; }
+    }
+    
+    .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .modal-header {
+      background-color: var(--primary);
+      color: white;
+      border-radius: 12px 12px 0 0;
+    }
+    
+    .sidebar {
+      position: sticky;
+      top: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        position: static;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div><strong>نظام تتبع حضيرة السيارات</strong></div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <span class="badge" id="totalCars">0</span>
-      <button class="icon-btn" id="exportBtn"><i class="fas fa-file-export"></i></button>
-      <button class="icon-btn" id="importBtn"><i class="fas fa-file-import"></i></button>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-car-front-fill me-2"></i>
+        نظام تتبع حضيرة السيارات
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <span class="nav-link">
+              <span class="status-indicator status-online" id="opencvStatus"></span>
+              OpenCV
+            </span>
+          </li>
+          <li class="nav-item">
+            <span class="nav-link">
+              <span class="status-indicator status-online" id="tesseractStatus"></span>
+              Tesseract
+            </span>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center">
+          <span class="badge bg-light text-dark me-3" id="totalCars">0 سيارة</span>
+          <button class="btn btn-sm btn-outline-light me-2" id="exportBtn" title="تصدير Excel">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-light" id="importBtn" title="استيراد Excel">
+            <i class="bi bi-file-earmark-arrow-up"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container my-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-lg-4 mb-4">
+        <div class="sidebar">
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0"><i class="bi bi-search me-2"></i>بحث</h5>
+            </div>
+            <div class="card-body">
+              <div class="input-group mb-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="ابحث في البيانات...">
+                <button class="btn btn-primary" onclick="searchData()"><i class="bi bi-search"></i></button>
+              </div>
+              <div class="d-grid gap-2 d-md-flex">
+                <button class="btn btn-outline-secondary flex-fill" onclick="clearSearch()">مسح البحث</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0"><i class="bi bi-tools me-2"></i>أدوات</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <button class="btn btn-primary" onclick="openAddModal()">
+                  <i class="bi bi-plus-circle me-2"></i>إضافة سيارة
+                </button>
+                <button class="btn btn-success" onclick="openScannerModal()">
+                  <i class="bi bi-camera me-2"></i>مسح لوحة (كاميرا)
+                </button>
+              </div>
+              
+              <hr>
+              
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary" onclick="document.getElementById('fileIn').click()">
+                  <i class="bi bi-file-earmark-arrow-down me-2"></i>استيراد Excel
+                </button>
+                <button class="btn btn-outline-primary" onclick="exportToExcel()">
+                  <i class="bi bi-file-earmark-arrow-up me-2"></i>تصدير Excel
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header bg-danger text-white">
+              <h5 class="card-title mb-0"><i class="bi bi-ban me-2"></i>القائمة السوداء</h5>
+            </div>
+            <div class="card-body">
+              <div class="input-group mb-3">
+                <input type="text" id="blackPlate" class="form-control" placeholder="أدخل رقم اللوحة">
+                <button class="btn btn-danger" onclick="addToBlacklist()">إضافة</button>
+              </div>
+              <div id="blacklistContainer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content Area -->
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-table me-2"></i>قاعدة بيانات السيارات</h5>
+            <div class="d-flex">
+              <button class="btn btn-sm btn-light me-2" onclick="refreshData()">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 560px;">
+              <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                  <tr>
+                    <th onclick="sortTable('driverName')">السائق <i class="bi bi-arrow-down-up"></i></th>
+                    <th onclick="sortTable('position')">الوحدة <i class="bi bi-arrow-down-up"></i></th>
+                    <th onclick="sortTable('brand')">العلامة <i class="bi bi-arrow-down-up"></i></th>
+                    <th onclick="sortTable('carName')">النوع <i class="bi bi-arrow-down-up"></i></th>
+                    <th onclick="sortTable('registrationNumber')">رقم التسجيل <i class="bi bi-arrow-down-up"></i></th>
+                    <th>هاتف</th>
+                    <th>ملاحظة</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <h4>أدوات</h4>
-      <div style="margin:8px 0"><input id="searchInput" placeholder="ابحث..." style="width:100%;padding:8px;border-radius:6px;border:1px solid #eef2ff"></div>
-      <div class="small" style="margin-bottom:8px">
-        <button onclick="searchData()" style="flex:1">بحث</button>
-        <button onclick="clearSearch()" style="flex:1;background:#6b7280">مسح</button>
-      </div>
-
-      <button onclick="openAddModal()">إضافة سيارة</button>
-      <button onclick="openScannerModal()">مسح لوحة (كاميرا تلقائي)</button>
-
-      <div style="margin-top:10px">
-        <input id="fileIn" type="file" accept=".xlsx,.xls" class="hidden">
-        <button onclick="document.getElementById('fileIn').click()">استيراد Excel</button>
-        <button onclick="exportToExcel()">تصدير Excel</button>
-      </div>
-
-      <hr style="margin:12px 0;border:none;border-top:1px solid #eef2ff"/>
-
-      <h4>قائمة سوداء</h4>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="blackPlate" placeholder="أدخل رقم اللوحة" style="flex:1;padding:8px;border-radius:6px;border:1px solid #eef2ff" />
-        <button onclick="addToBlacklist()">أضف</button>
-      </div>
-      <div id="blacklistContainer"></div>
-
-      <hr style="margin:12px 0;border:none;border-top:1px solid #eef2ff"/>
-      <div>ملاحظة: المعالجة التلقائية تعمل بمعايير ثابتة مخفية لتحسين الدقة عبر OpenCV ثم Tesseract.</div>
-    </div>
-
-    <div class="card">
-      <h4>قاعدة بيانات السيارات</h4>
-      <div class="table-wrap">
-        <table id="carsTable"><thead>
-          <tr>
-            <th onclick="sortTable('driverName')">السائق</th>
-            <th onclick="sortTable('position')">الوحدة</th>
-            <th onclick="sortTable('brand')">العلامة</th>
-            <th onclick="sortTable('carName')">النوع</th>
-            <th onclick="sortTable('registrationNumber')">رقم التسجيل</th>
-            <th>هاتف</th>
-            <th>ملاحظة</th>
-            <th>إجراءات</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody></table>
+  <!-- Modals -->
+  <!-- Add/Edit Modal -->
+  <div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addTitle">إضافة / تعديل</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">اسم السائق</label>
+              <input type="text" id="m_driverName" class="form-control" placeholder="اسم السائق">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">الوحدة</label>
+              <input type="text" id="m_position" class="form-control" placeholder="الوحدة">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">العلامة</label>
+              <input type="text" id="m_brand" class="form-control" placeholder="العلامة">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">نوع المركبة</label>
+              <input type="text" id="m_carName" class="form-control" placeholder="نوع المركبة">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">رقم التسجيل</label>
+              <input type="text" id="m_registrationNumber" class="form-control" placeholder="رقم التسجيل">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">هاتف</label>
+              <input type="text" id="m_phoneNumber" class="form-control" placeholder="هاتف">
+            </div>
+            <div class="col-12">
+              <label class="form-label">ملاحظة</label>
+              <textarea id="m_note" class="form-control" placeholder="ملاحظة" rows="3"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-primary" onclick="saveModal()">حفظ</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modals -->
-<div id="addModal" class="modal"><div class="dialog">
-  <h3 id="addTitle">إضافة / تعديل</h3>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <input id="m_driverName" placeholder="اسم السائق"/><input id="m_position" placeholder="الوحدة"/>
-    <input id="m_brand" placeholder="العلامة"/><input id="m_carName" placeholder="نوع المركبة"/>
-    <input id="m_registrationNumber" placeholder="رقم التسجيل"/><input id="m_phoneNumber" placeholder="هاتف"/>
-    <textarea id="m_note" placeholder="ملاحظة" style="grid-column:1/3"></textarea>
-  </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button onclick="saveModal()">حفظ</button><button onclick="closeModal('addModal')">إلغاء</button>
-  </div>
-</div></div>
-
-<div id="scannerModal" class="modal"><div class="dialog">
-  <h3>مسح لوحة الترقيم — تلقائي</h3>
-  <div style="display:flex;gap:12px;align-items:flex-start">
-    <div style="flex:1">
-      <div class="camera-area" id="cameraArea">
-        <video id="video" playsinline autoplay class="hidden" style="width:100%;height:100%;object-fit:cover"></video>
-        <canvas id="canvasPreview" class="hidden" style="width:100%;height:100%"></canvas>
-        <div id="cameraPlaceholder" style="color:#fff">الكاميرا غير مفعلة</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button onclick="enableCamera()">تفعيل الكاميرا</button>
-        <button onclick="stopCamera()">إيقاف الكاميرا</button>
-        <input id="uploadImg" type="file" accept="image/*" style="margin-left:6px"/>
+  <!-- Scanner Modal -->
+  <div class="modal fade" id="scannerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">مسح لوحة الترقيم — تلقائي</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="camera-area" id="cameraArea">
+                <div class="loading-overlay hidden" id="cameraLoading">
+                  <div class="text-center">
+                    <svg class="progress-ring" viewBox="0 0 60 60">
+                      <circle class="progress-ring-circle" stroke="#ffffff" stroke-width="3" fill="transparent" r="25" cx="30" cy="30"/>
+                    </svg>
+                    <p class="mt-2">جاري تحميل الكاميرا...</p>
+                  </div>
+                </div>
+                <video id="video" playsinline autoplay class="hidden" style="width:100%;height:100%;object-fit:cover"></video>
+                <canvas id="canvasPreview" class="hidden" style="width:100%;height:100%"></canvas>
+                <div id="cameraPlaceholder" class="text-white d-flex align-items-center justify-content-center h-100">
+                  <div class="text-center">
+                    <i class="bi bi-camera-video-off" style="font-size: 48px;"></i>
+                    <p class="mt-2">الكاميرا غير مفعلة</p>
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary flex-fill" onclick="enableCamera()">
+                  <i class="bi bi-camera-video me-2"></i>تفعيل الكاميرا
+                </button>
+                <button class="btn btn-secondary flex-fill" onclick="stopCamera()">
+                  <i class="bi bi-stop-circle me-2"></i>إيقاف الكاميرا
+                </button>
+                <input id="uploadImg" type="file" accept="image/*" class="form-control flex-fill">
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <h6>لوحة المعاينة</h6>
+              <div class="preview-plate w-100 text-center my-3" id="platePreview">--- ---</div>
+              <div id="matchResult" class="mb-3"></div>
+              <div class="d-grid gap-2">
+                <button class="btn btn-warning" onclick="runOcrOnCurrent()">
+                  <i class="bi bi-gear me-2"></i>تحليل يدوي للصورة الحالية
+                </button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <div style="width:340px">
-      <div>لوحة المعاينة</div>
-      <div style="margin:8px 0"><span class="preview-plate" id="platePreview">--- ---</span></div>
-      <div id="matchResult"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button onclick="runOcrOnCurrent()">تحليل يدوي للصورة الحالية</button>
-        <button onclick="closeModal('scannerModal')">إغلاق</button>
-      </div>
-    </div>
   </div>
-</div></div>
 
-<!-- Hidden file input for excel -->
-<input id="fileInHidden" type="file" accept=".xlsx,.xls" class="hidden">
+  <!-- Hidden file input for excel -->
+  <input id="fileIn" type="file" accept=".xlsx,.xls" class="hidden">
 
-<script>
-/* ================= مقادير مخفية ومعايير ثابتة محسنة ================= */
-const OPENCV_PARAMS = {
-  cannyLow: 50,
-  cannyHigh: 150,
-  morphKernel: {w:17,h:3},
-  minRatio: 2.0,
-  maxRatio: 8.0,
-  minWidth: 60,
-  claheClip: 2.0,
-  claheTile: 8,
-  sampleIntervalMs: 1200, // فاصل المسح التلقائي عند الكاميرا
-  minArea: 3000
-};
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-/* ================= متغيرات عامة ================= */
-let carsData = [];
-let blacklist = [];
-const LS_KEY = 'fleet_auto_opencv_v1';
-const LS_BLACK = 'fleet_black_v1';
-let editIndex = -1;
-let sortCol = null, sortDir = 'asc';
-let videoStream = null;
-let opencvReady = false;
-let tesseractWorker = null;
-let autoScanTimer = null;
-let lastRecognized = '';
-let scanningEnabled = false;
+  <script>
+    /* ================= مقادير مخفية ومعايير ثابتة محسنة ================= */
+    const OPENCV_PARAMS = {
+      cannyLow: 50,
+      cannyHigh: 150,
+      morphKernel: {w:17,h:3},
+      minRatio: 2.0,
+      maxRatio: 8.0,
+      minWidth: 60,
+      claheClip: 2.0,
+      claheTile: 8,
+      sampleIntervalMs: 1200, // فاصل المسح التلقائي عند الكاميرا
+      minArea: 3000
+    };
 
-/* ===== انتظار OpenCV جاهز ===== */
-function onOpenCvReady(){ opencvReady = true; console.log('OpenCV ready'); }
-if (typeof cv !== 'undefined') {
-  if (cv['onRuntimeInitialized']) cv['onRuntimeInitialized']=onOpenCvReady;
-  else onOpenCvReady();
-}
+    /* ================= متغيرات عامة ================= */
+    let carsData = [];
+    let blacklist = [];
+    const LS_KEY = 'fleet_auto_opencv_v1';
+    const LS_BLACK = 'fleet_black_v1';
+    let editIndex = -1;
+    let sortCol = null, sortDir = 'asc';
+    let videoStream = null;
+    let opencvReady = false;
+    let tesseractWorker = null;
+    let autoScanTimer = null;
+    let lastRecognized = '';
+    let scanningEnabled = false;
 
-/* ===== إعداد Tesseract لمرة واحدة ===== */
-(async function initTesseract(){
-  tesseractWorker = Tesseract.createWorker({ logger: m => {} });
-  await tesseractWorker.load();
-  await tesseractWorker.loadLanguage('ara+eng');
-  await tesseractWorker.initialize('ara+eng');
-})();
-
-/* ===== تحميل من LocalStorage ===== */
-document.addEventListener('DOMContentLoaded', ()=>{
-  const s = localStorage.getItem(LS_KEY);
-  const b = localStorage.getItem(LS_BLACK);
-  if (s) carsData = JSON.parse(s);
-  if (b) blacklist = JSON.parse(b);
-  renderTable(); renderBlacklist(); updateStats();
-});
-
-/* ===== CRUD و UI بسيطة ===== */
-function openAddModal(idx=-1){
-  editIndex = idx;
-  document.getElementById('addModal').style.display = 'flex';
-  if (idx===-1){
-    ['m_driverName','m_position','m_brand','m_carName','m_registrationNumber','m_phoneNumber','m_note'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('addTitle').textContent = 'إضافة سيارة';
-  } else {
-    const c = carsData[idx];
-    document.getElementById('addTitle').textContent = 'تعديل سيارة';
-    document.getElementById('m_driverName').value = c.driverName||'';
-    document.getElementById('m_position').value = c.position||'';
-    document.getElementById('m_brand').value = c.brand||'';
-    document.getElementById('m_carName').value = c.carName||'';
-    document.getElementById('m_registrationNumber').value = c.registrationNumber||'';
-    document.getElementById('m_phoneNumber').value = c.phoneNumber||'';
-    document.getElementById('m_note').value = c.note||'';
-  }
-}
-function closeModal(id){ document.getElementById(id).style.display='none'; }
-function saveModal(){
-  const obj = {
-    driverName: document.getElementById('m_driverName').value.trim(),
-    position: document.getElementById('m_position').value.trim(),
-    brand: document.getElementById('m_brand').value.trim(),
-    carName: document.getElementById('m_carName').value.trim(),
-    registrationNumber: document.getElementById('m_registrationNumber').value.trim(),
-    phoneNumber: document.getElementById('m_phoneNumber').value.trim(),
-    note: document.getElementById('m_note').value.trim()
-  };
-  if (!obj.registrationNumber){ alert('أدخل رقم التسجيل'); return; }
-  if (editIndex===-1) carsData.push(obj); else carsData[editIndex] = obj;
-  persist(); closeModal('addModal'); renderTable(); updateStats();
-}
-
-/* ===== حفظ واستعادة ===== */
-function persist(){ localStorage.setItem(LS_KEY, JSON.stringify(carsData)); localStorage.setItem(LS_BLACK, JSON.stringify(blacklist)); }
-
-/* ===== عرض الجدول ===== */
-function renderTable(filter=null){
-  const tbody = document.getElementById('tbody'); tbody.innerHTML='';
-  const data = filter || carsData;
-  if (!data.length){ tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:18px">لا توجد بيانات</td></tr>'; return; }
-  data.forEach((c,i)=>{
-    const isBlack = blacklist.includes((c.registrationNumber||'').replace(/\s+/g,'').toLowerCase());
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${esc(c.driverName)}</td>
-      <td>${esc(c.position)}</td>
-      <td>${esc(c.brand)}</td>
-      <td>${esc(c.carName)}</td>
-      <td>${esc(c.registrationNumber)} ${isBlack?'<span class="blacklist">محظورة</span>':''}</td>
-      <td>${esc(c.phoneNumber)}</td>
-      <td class="note">${esc(c.note)}</td>
-      <td style="white-space:nowrap">
-        <button onclick="openAddModal(${i})">تعديل</button>
-        <button onclick="deleteRow(${i})" style="margin-left:6px;background:var(--a);color:#fff">حذف</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('totalCars').textContent = carsData.length;
-}
-function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function deleteRow(i){ if (!confirm('تأكيد الحذف؟')) return; carsData.splice(i,1); persist(); renderTable(); updateStats(); }
-
-/* ===== فرز وبحث ===== */
-function sortTable(col){
-  if (sortCol===col) sortDir = sortDir==='asc'?'desc':'asc'; else { sortCol = col; sortDir='asc'; }
-  carsData.sort((a,b)=>{ const A=(a[col]||'').toString().toLowerCase(); const B=(b[col]||'').toString().toLowerCase(); if (A<B) return sortDir==='asc'?-1:1; if (A>B) return sortDir==='asc'?1:-1; return 0; });
-  renderTable();
-}
-function searchData(){ const q = document.getElementById('searchInput').value.trim().toLowerCase(); if (!q) return renderTable(); const filtered = carsData.filter(c=>Object.values(c).some(v=>(v||'').toString().toLowerCase().includes(q))); renderTable(filtered); }
-function clearSearch(){ document.getElementById('searchInput').value=''; renderTable(); }
-
-/* ===== قائمة سوداء ===== */
-function addToBlacklist(){ const p=document.getElementById('blackPlate').value.trim(); if(!p) return; const key=p.replace(/\s+/g,'').toLowerCase(); if(!blacklist.includes(key)) blacklist.push(key); document.getElementById('blackPlate').value=''; renderBlacklist(); persist(); updateStats(); }
-function removeFromBlacklist(i){ blacklist.splice(i,1); renderBlacklist(); persist(); updateStats(); }
-function renderBlacklist(){ const c=document.getElementById('blacklistContainer'); c.innerHTML=''; if(!blacklist.length){ c.innerHTML='<div>لا توجد لوحات محظورة</div>'; return; } blacklist.forEach((b,i)=>{ const div=document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.alignItems='center'; div.style.marginBottom='6px'; div.innerHTML=`<div class="blacklist">${b.toUpperCase()}</div><button onclick="removeFromBlacklist(${i})">إزالة</button>`; c.appendChild(div); }); }
-function updateStats(){ document.getElementById('totalCars').textContent = carsData.length; }
-
-/* ===== استيراد / تصدير Excel ===== */
-document.getElementById('fileIn').addEventListener('change', loadExcelFile);
-function loadExcelFile(e){ const f=e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=(ev)=>{ const wb=XLSX.read(ev.target.result,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; const json=XLSX.utils.sheet_to_json(ws); json.forEach(row=>carsData.push({
-  driverName: row['إسم مستخدم المركبة']||row['driverName']||'',
-  position: row['الوحدة/المصلحة']||row['position']||'',
-  brand: row['العلامة التجارية']||row['brand']||'',
-  carName: row['نوع المركبة']||row['carName']||'',
-  registrationNumber: row['رقم تسجيل المركبة']||row['registrationNumber']||'',
-  phoneNumber: row['هاتف المستخدم']||row['phoneNumber']||'',
-  note: row['الملاحظة']||row['note']||''
-})); persist(); renderTable(); updateStats(); }; reader.readAsArrayBuffer(f); e.target.value=''; }
-function exportToExcel(){ if(!carsData.length){ alert('لا توجد بيانات للتصدير'); return; } const out=carsData.map(c=>({'إسم مستخدم المركبة':c.driverName,'الوحدة/المصلحة':c.position,'العلامة التجارية':c.brand,'نوع المركبة':c.carName,'رقم تسجيل المركبة':c.registrationNumber,'هاتف المستخدم':c.phoneNumber,'الملاحظة':c.note})); const ws=XLSX.utils.json_to_sheet(out); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'بيانات'); XLSX.writeFile(wb,'بيانات_السيارات.xlsx'); }
-
-/* ===== كاميرا وتحليل تلقائي ===== */
-document.getElementById('uploadImg').addEventListener('change', async (e)=>{ const f=e.target.files[0]; if(!f) return; const url=URL.createObjectURL(f); await loadImageToCanvas(url); });
-
-async function enableCamera(){
-  try {
-    const v=document.getElementById('video');
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
-    videoStream=stream; v.srcObject=stream; v.classList.remove('hidden'); document.getElementById('cameraPlaceholder').classList.add('hidden');
-    await v.play();
-    startAutoScan();
-  } catch(err){ alert('تعذر الوصول إلى الكاميرا'); console.error(err); }
-}
-function stopCamera(){ if (videoStream) videoStream.getTracks().forEach(t=>t.stop()); const v=document.getElementById('video'); v.pause(); v.classList.add('hidden'); document.getElementById('cameraPlaceholder').classList.remove('hidden'); stopAutoScan(); scanningEnabled=false; }
-
-async function captureFrameToCanvas(){
-  const v=document.getElementById('video');
-  const c=document.getElementById('canvasPreview');
-  c.width = v.videoWidth; c.height = v.videoHeight;
-  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
-  c.classList.remove('hidden');
-  return c;
-}
-async function loadImageToCanvas(src){
-  const img=new Image(); img.src=src; await img.decode();
-  const c=document.getElementById('canvasPreview');
-  c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-  c.classList.remove('hidden');
-  runOcrOnCanvas(c);
-}
-
-/* تشغيل المسح التلقائي: يأخذ لقطة كل OPENCV_PARAMS.sampleIntervalMs مللي ثانية */
-function startAutoScan(){
-  if (autoScanTimer) clearInterval(autoScanTimer);
-  scanningEnabled = true;
-  autoScanTimer = setInterval(async ()=>{
-    try {
-      const c = await captureFrameToCanvas();
-      // معالجة OpenCV واستخراج ROI (إن وُجد) ثم OCR إن لزم
-      const {dataUrl, roiFound} = await preprocessWithOpenCV(c);
-      if (!roiFound) return;
-      // تجنب تشغيل OCR إن تم التعرف مؤخرا على نفس اللوحة
-      const plate = await recognizeDataUrl(dataUrl);
-      if (plate && plate !== lastRecognized){
-        lastRecognized = plate;
-        document.getElementById('platePreview').textContent = plate;
-        checkMatch(plate);
-      }
-    } catch(e){ console.error('autoScan error', e); }
-  }, OPENCV_PARAMS.sampleIntervalMs);
-}
-function stopAutoScan(){ if (autoScanTimer) clearInterval(autoScanTimer); autoScanTimer=null; }
-
-/* ===== معالجة OpenCV تلقائية =====
-   ترجع {dataUrl, roiFound:true/false}
-*/
-function preprocessWithOpenCV(canvas){
-  return new Promise((resolve)=>{
-    if (!opencvReady){ resolve({dataUrl: canvas.toDataURL(), roiFound:true}); return; }
-    try {
-      const src = cv.imread(canvas);
-      let gray = new cv.Mat(); cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-      // فلتر تقليل الضجيج
-      let blur = new cv.Mat(); cv.bilateralFilter(gray, blur, 9, 75, 75);
-      // CLAHE لتحسين التباين
-      let clahe = new cv.Mat();
-      let claheObj = new cv.CLAHE(OPENCV_PARAMS.claheClip, new cv.Size(OPENCV_PARAMS.claheTile, OPENCV_PARAMS.claheTile));
-      claheObj.apply(blur, clahe);
-      // كشف الحواف
-      let edges = new cv.Mat(); cv.Canny(clahe, edges, OPENCV_PARAMS.cannyLow, OPENCV_PARAMS.cannyHigh);
-      // مورفولوجي لملء الفواصل
-      let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(OPENCV_PARAMS.morphKernel.w, OPENCV_PARAMS.morphKernel.h));
-      cv.morphologyEx(edges, edges, cv.MORPH_CLOSE, kernel);
-      // إيجاد contours
-      let contours = new cv.MatVector(); let hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-      // بحث عن مستطيل محتمل للوحة
-      let maxRect = null; let maxArea = 0;
-      for (let i=0;i<contours.size();i++){
-        const cnt = contours.get(i);
-        const peri = cv.arcLength(cnt, true);
-        const approx = new cv.Mat();
-        cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
-        if (approx.rows >= 4){
-          const rect = cv.boundingRect(approx);
-          const area = rect.width * rect.height;
-          const ratio = rect.width / rect.height;
-          if (area > maxArea && area > OPENCV_PARAMS.minArea && ratio > OPENCV_PARAMS.minRatio && ratio < OPENCV_PARAMS.maxRatio && rect.width > OPENCV_PARAMS.minWidth){
-            maxArea = area; maxRect = rect;
-          }
-        }
-        cnt.delete(); approx.delete();
-      }
-
-      let resultCanvas = document.createElement('canvas'); let roiFound = false;
-      if (maxRect){
-        roiFound = true;
-        resultCanvas.width = maxRect.width; resultCanvas.height = maxRect.height;
-        const roi = src.roi(maxRect);
-        // معالجة نهائية: تحويل إلى ثنائي مع CLAHE ثم عتبة
-        let roiGray = new cv.Mat(); cv.cvtColor(roi, roiGray, cv.COLOR_RGBA2GRAY);
-        let roiClahe = new cv.Mat(); claheObj.apply(roiGray, roiClahe);
-        cv.threshold(roiClahe, roiClahe, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
-        cv.imshow(resultCanvas, roiClahe);
-        roi.delete(); roiGray.delete(); roiClahe.delete();
-      } else {
-        // لا ROI واضح: نعيد نسخة محسنة كاملة (CLAHE)
-        resultCanvas.width = src.cols; resultCanvas.height = src.rows;
-        cv.imshow(resultCanvas, clahe);
-      }
-
-      // تنظيف
-      src.delete(); gray.delete(); blur.delete(); clahe.delete(); edges.delete(); contours.delete(); hierarchy.delete(); claheObj.delete();
-      const dataUrl = resultCanvas.toDataURL('image/png');
-      resolve({dataUrl, roiFound});
-    } catch (err){
-      console.error('OpenCV error', err);
-      resolve({dataUrl: canvas.toDataURL(), roiFound:true});
+    /* ===== انتظار OpenCV جاهز ===== */
+    function onOpenCvReady(){ 
+      opencvReady = true; 
+      console.log('OpenCV ready');
+      document.getElementById('opencvStatus').classList.add('status-online');
+      document.getElementById('opencvStatus').classList.remove('status-offline');
     }
-  });
-}
+    if (typeof cv !== 'undefined') {
+      if (cv['onRuntimeInitialized']) cv['onRuntimeInitialized']=onOpenCvReady;
+      else onOpenCvReady();
+    } else {
+      document.getElementById('opencvStatus').classList.add('status-offline');
+      document.getElementById('opencvStatus').classList.remove('status-online');
+    }
 
-/* ===== تمييز نص من DataURL باستخدام Tesseract مع تطهير النص ===== */
-async function recognizeDataUrl(dataUrl){
-  try {
-    const img = new Image(); img.src = dataUrl; await img.decode();
-    const tmp = document.createElement('canvas'); tmp.width = img.naturalWidth; tmp.height = img.naturalHeight; tmp.getContext('2d').drawImage(img,0,0);
-    const { data: { text } } = await tesseractWorker.recognize(tmp);
-    const plate = normalizePlateText(text);
-    return plate;
-  } catch (e){ console.error('recognize error', e); return ''; }
-}
+    /* ===== إعداد Tesseract لمرة واحدة ===== */
+    (async function initTesseract(){
+      try {
+        document.getElementById('tesseractStatus').classList.add('status-offline');
+        tesseractWorker = Tesseract.createWorker({ logger: m => {} });
+        await tesseractWorker.load();
+        await tesseractWorker.loadLanguage('ara+eng');
+        await tesseractWorker.initialize('ara+eng');
+        document.getElementById('tesseractStatus').classList.add('status-online');
+        document.getElementById('tesseractStatus').classList.remove('status-offline');
+      } catch (e) {
+        console.error('Tesseract initialization failed', e);
+      }
+    })();
 
-/* تشغيل OCR على كانفاس الحالي (تم النقر يدوياً) */
-async function runOcrOnCanvas(canvas){
-  const {dataUrl, roiFound} = await preprocessWithOpenCV(canvas);
-  const plate = await recognizeDataUrl(dataUrl);
-  document.getElementById('platePreview').textContent = plate || 'لم يتم التعرف';
-  checkMatch(plate);
-}
-async function runOcrOnCurrent(){
-  const c=document.getElementById('canvasPreview');
-  if (c.classList.contains('hidden')) { alert('لا توجد صورة'); return; }
-  await runOcrOnCanvas(c);
-}
+    /* ===== تحميل من LocalStorage ===== */
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const s = localStorage.getItem(LS_KEY);
+      const b = localStorage.getItem(LS_BLACK);
+      if (s) carsData = JSON.parse(s);
+      if (b) blacklist = JSON.parse(b);
+      renderTable(); renderBlacklist(); updateStats();
+    });
 
-/* نص اللوحة: يدعم صيغ متعددة عربية ولاتينية وأرقام */
-function normalizePlateText(text){
-  if (!text) return '';
-  // نسمح بأرقام، حروف لاتينية، حروف عربية، شرطات ومسافات صغيرة
-  let cleaned = text.replace(/[^0-9A-Za-z\u0600-\u06FF\- ]/g,'').trim();
-  // توحيد المسافات والشرط
-  cleaned = cleaned.replace(/[\s\-]+/g,'');
-  return cleaned.toUpperCase();
-}
+    /* ===== CRUD و UI بسيطة ===== */
+    function openAddModal(idx=-1){
+      editIndex = idx;
+      const modal = new bootstrap.Modal(document.getElementById('addModal'));
+      if (idx===-1){
+        ['m_driverName','m_position','m_brand','m_carName','m_registrationNumber','m_phoneNumber','m_note'].forEach(id=>document.getElementById(id).value='');
+        document.getElementById('addTitle').textContent = 'إضافة سيارة';
+      } else {
+        const c = carsData[idx];
+        document.getElementById('addTitle').textContent = 'تعديل سيارة';
+        document.getElementById('m_driverName').value = c.driverName||'';
+        document.getElementById('m_position').value = c.position||'';
+        document.getElementById('m_brand').value = c.brand||'';
+        document.getElementById('m_carName').value = c.carName||'';
+        document.getElementById('m_registrationNumber').value = c.registrationNumber||'';
+        document.getElementById('m_phoneNumber').value = c.phoneNumber||'';
+        document.getElementById('m_note').value = c.note||'';
+      }
+      modal.show();
+    }
 
-/* مقارنة، تحذير القائمة السوداء والتحديث UI */
-function checkMatch(plate){
-  const key = (plate||'').replace(/\s+/g,'').toLowerCase();
-  const matchDiv = document.getElementById('matchResult');
-  if (!key){ matchDiv.innerHTML = '<div style="padding:8px">لم يتم التعرف على لوحة واضحة.</div>'; return; }
-  if (blacklist.includes(key)){ matchDiv.innerHTML = '<div style="background:#fee2e2;padding:8px;border-radius:6px;color:#991b1b">هذه اللوحة مُدرجة في القائمة السوداء</div>'; return; }
-  const found = carsData.find(c => (c.registrationNumber||'').replace(/\s+/g,'').toLowerCase()===key);
-  if (found){
-    matchDiv.innerHTML = `<div style="background:#ecfeff;padding:8px;border-radius:6px;color:#064e3b">
-      <strong>موجودة:</strong> ${esc(found.driverName)} — ${esc(found.position)} — ${esc(found.brand)} — ${esc(found.carName)}
-    </div>`;
-  } else {
-    matchDiv.innerHTML = `<div style="background:#fff7ed;padding:8px;border-radius:6px;color:#92400e">اللوحة غير موجودة في السجلات</div>`;
-  }
-}
+    function saveModal(){
+      const obj = {
+        driverName: document.getElementById('m_driverName').value.trim(),
+        position: document.getElementById('m_position').value.trim(),
+        brand: document.getElementById('m_brand').value.trim(),
+        carName: document.getElementById('m_carName').value.trim(),
+        registrationNumber: document.getElementById('m_registrationNumber').value.trim(),
+        phoneNumber: document.getElementById('m_phoneNumber').value.trim(),
+        note: document.getElementById('m_note').value.trim()
+      };
+      if (!obj.registrationNumber){ alert('أدخل رقم التسجيل'); return; }
+      if (editIndex===-1) carsData.push(obj); else carsData[editIndex] = obj;
+      persist(); 
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
+      modal.hide();
+      renderTable(); updateStats();
+    }
 
-/* ===== أدوات مساعدة أخيرة ===== */
-function deleteAll(){ if(!confirm('مسح جميع البيانات؟')) return; carsData=[]; persist(); renderTable(); updateStats(); }
-document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('fileIn').click());
-document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+    /* ===== حفظ واستعادة ===== */
+    function persist(){ localStorage.setItem(LS_KEY, JSON.stringify(carsData)); localStorage.setItem(LS_BLACK, JSON.stringify(blacklist)); }
 
-/* تنظيف عند الخروج */
-window.addEventListener('beforeunload', ()=>{ if (videoStream) videoStream.getTracks().forEach(t=>t.stop()); if (tesseractWorker) tesseractWorker.terminate(); if (autoScanTimer) clearInterval(autoScanTimer); });
-</script>
+    /* ===== عرض الجدول ===== */
+    function renderTable(filter=null){
+      const tbody = document.getElementById('tbody'); tbody.innerHTML='';
+      const data = filter || carsData;
+      if (!data.length){ tbody.innerHTML='<tr><td colspan="8" class="text-center py-4">لا توجد بيانات</td></tr>'; return; }
+      data.forEach((c,i)=>{
+        const isBlack = blacklist.includes((c.registrationNumber||'').replace(/\s+/g,'').toLowerCase());
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(c.driverName)}</td>
+          <td>${esc(c.position)}</td>
+          <td>${esc(c.brand)}</td>
+          <td>${esc(c.carName)}</td>
+          <td>${esc(c.registrationNumber)} ${isBlack?'<span class="badge bg-danger">محظورة</span>':''}</td>
+          <td>${esc(c.phoneNumber)}</td>
+          <td class="note-cell" title="${esc(c.note)}">${esc(c.note)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="openAddModal(${i})">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteRow(${i})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('totalCars').textContent = carsData.length + ' سيارة';
+    }
+    
+    function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    
+    function deleteRow(i){ 
+      if (!confirm('تأكيد الحذف؟')) return; 
+      carsData.splice(i,1); 
+      persist(); 
+      renderTable(); 
+      updateStats(); 
+    }
+
+    /* ===== فرز وبحث ===== */
+    function sortTable(col){
+      if (sortCol===col) sortDir = sortDir==='asc'?'desc':'asc'; else { sortCol = col; sortDir='asc'; }
+      carsData.sort((a,b)=>{ const A=(a[col]||'').toString().toLowerCase(); const B=(b[col]||'').toString().toLowerCase(); if (A<B) return sortDir==='asc'?-1:1; if (A>B) return sortDir==='asc'?1:-1; return 0; });
+      renderTable();
+    }
+    
+    function searchData(){ 
+      const q = document.getElementById('searchInput').value.trim().toLowerCase(); 
+      if (!q) return renderTable(); 
+      const filtered = carsData.filter(c=>Object.values(c).some(v=>(v||'').toString().toLowerCase().includes(q))); 
+      renderTable(filtered); 
+    }
+    
+    function clearSearch(){ 
+      document.getElementById('searchInput').value=''; 
+      renderTable(); 
+    }
+
+    /* ===== قائمة سوداء ===== */
+    function addToBlacklist(){ 
+      const p=document.getElementById('blackPlate').value.trim(); 
+      if(!p) return; 
+      const key=p.replace(/\s+/g,'').toLowerCase(); 
+      if(!blacklist.includes(key)) blacklist.push(key); 
+      document.getElementById('blackPlate').value=''; 
+      renderBlacklist(); 
+      persist(); 
+      updateStats(); 
+    }
+    
+    function removeFromBlacklist(i){ 
+      blacklist.splice(i,1); 
+      renderBlacklist(); 
+      persist(); 
+      updateStats(); 
+    }
+    
+    function renderBlacklist(){ 
+      const c=document.getElementById('blacklistContainer'); 
+      c.innerHTML=''; 
+      if(!blacklist.length){ 
+        c.innerHTML='<div class="text-muted text-center py-2">لا توجد لوحات محظورة</div>'; 
+        return; 
+      } 
+      blacklist.forEach((b,i)=>{ 
+        const div=document.createElement('div'); 
+        div.className = 'd-flex justify-content-between align-items-center mb-2';
+        div.innerHTML=`
+          <span class="blacklist-item">${b.toUpperCase()}</span>
+          <button class="btn btn-sm btn-outline-danger" onclick="removeFromBlacklist(${i})">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        `; 
+        c.appendChild(div); 
+      }); 
+    }
+    
+    function updateStats(){ 
+      document.getElementById('totalCars').textContent = carsData.length + ' سيارة'; 
+    }
+
+    /* ===== استيراد / تصدير Excel ===== */
+    document.getElementById('fileIn').addEventListener('change', loadExcelFile);
+    
+    function loadExcelFile(e){ 
+      const f=e.target.files[0]; 
+      if(!f) return; 
+      const reader=new FileReader(); 
+      reader.onload=(ev)=>{ 
+        const wb=XLSX.read(ev.target.result,{type:'array'}); 
+        const ws=wb.Sheets[wb.SheetNames[0]]; 
+        const json=XLSX.utils.sheet_to_json(ws); 
+        json.forEach(row=>carsData.push({
+          driverName: row['إسم مستخدم المركبة']||row['driverName']||'',
+          position: row['الوحدة/المصلحة']||row['position']||'',
+          brand: row['العلامة التجارية']||row['brand']||'',
+          carName: row['نوع المركبة']||row['carName']||'',
+          registrationNumber: row['رقم تسجيل المركبة']||row['registrationNumber']||'',
+          phoneNumber: row['هاتف المستخدم']||row['phoneNumber']||'',
+          note: row['الملاحظة']||row['note']||''
+        })); 
+        persist(); 
+        renderTable(); 
+        updateStats(); 
+      }; 
+      reader.readAsArrayBuffer(f); 
+      e.target.value=''; 
+    }
+    
+    function exportToExcel(){ 
+      if(!carsData.length){ 
+        alert('لا توجد بيانات للتصدير'); 
+        return; 
+      } 
+      const out=carsData.map(c=>({
+        'إسم مستخدم المركبة':c.driverName,
+        'الوحدة/المصلحة':c.position,
+        'العلامة التجارية':c.brand,
+        'نوع المركبة':c.carName,
+        'رقم تسجيل المركبة':c.registrationNumber,
+        'هاتف المستخدم':c.phoneNumber,
+        'الملاحظة':c.note
+      })); 
+      const ws=XLSX.utils.json_to_sheet(out); 
+      const wb=XLSX.utils.book_new(); 
+      XLSX.utils.book_append_sheet(wb,ws,'بيانات'); 
+      XLSX.writeFile(wb,'بيانات_السيارات.xlsx'); 
+    }
+
+    /* ===== كاميرا وتحليل تلقائي ===== */
+    document.getElementById('uploadImg').addEventListener('change', async (e)=>{ 
+      const f=e.target.files[0]; 
+      if(!f) return; 
+      const url=URL.createObjectURL(f); 
+      await loadImageToCanvas(url); 
+    });
+
+    function openScannerModal() {
+      const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+      modal.show();
+    }
+
+    async function enableCamera(){
+      try {
+        document.getElementById('cameraLoading').classList.remove('hidden');
+        const v=document.getElementById('video');
+        const stream=await navigator.mediaDevices.getUserMedia({
+          video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}
+        });
+        videoStream=stream; 
+        v.srcObject=stream; 
+        v.classList.remove('hidden'); 
+        document.getElementById('cameraPlaceholder').classList.add('hidden');
+        document.getElementById('cameraLoading').classList.add('hidden');
+        await v.play();
+        startAutoScan();
+      } catch(err){ 
+        alert('تعذر الوصول إلى الكاميرا'); 
+        console.error(err); 
+        document.getElementById('cameraLoading').classList.add('hidden');
+      }
+    }
+    
+    function stopCamera(){ 
+      if (videoStream) videoStream.getTracks().forEach(t=>t.stop()); 
+      const v=document.getElementById('video'); 
+      v.pause(); 
+      v.classList.add('hidden'); 
+      document.getElementById('cameraPlaceholder').classList.remove('hidden'); 
+      stopAutoScan(); 
+      scanningEnabled=false; 
+    }
+
+    async function captureFrameToCanvas(){
+      const v=document.getElementById('video');
+      const c=document.getElementById('canvasPreview');
+      c.width = v.videoWidth; 
+      c.height = v.videoHeight;
+      c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+      c.classList.remove('hidden');
+      return c;
+    }
+    
+    async function loadImageToCanvas(src){
+      const img=new Image(); 
+      img.src=src; 
+      await img.decode();
+      const c=document.getElementById('canvasPreview');
+      c.width=img.naturalWidth; 
+      c.height=img.naturalHeight; 
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.classList.remove('hidden');
+      runOcrOnCanvas(c);
+    }
+
+    /* تشغيل المسح التلقائي: يأخذ لقطة كل OPENCV_PARAMS.sampleIntervalMs مللي ثانية */
+    function startAutoScan(){
+      if (autoScanTimer) clearInterval(autoScanTimer);
+      scanningEnabled = true;
+      autoScanTimer = setInterval(async ()=>{
+        try {
+          const c = await captureFrameToCanvas();
+          // معالجة OpenCV واستخراج ROI (إن وُجد) ثم OCR إن لزم
+          const {dataUrl, roiFound} = await preprocessWithOpenCV(c);
+          if (!roiFound) return;
+          // تجنب تشغيل OCR إن تم التعرف مؤخرا على نفس اللوحة
+          const plate = await recognizeDataUrl(dataUrl);
+          if (plate && plate !== lastRecognized){
+            lastRecognized = plate;
+            document.getElementById('platePreview').textContent = plate;
+            checkMatch(plate);
+          }
+        } catch(e){ console.error('autoScan error', e); }
+      }, OPENCV_PARAMS.sampleIntervalMs);
+    }
+    
+    function stopAutoScan(){ 
+      if (autoScanTimer) clearInterval(autoScanTimer); 
+      autoScanTimer=null; 
+    }
+
+    /* ===== معالجة OpenCV تلقائية =====
+       ترجع {dataUrl, roiFound:true/false}
+    */
+    function preprocessWithOpenCV(canvas){
+      return new Promise((resolve)=>{
+        if (!opencvReady){ resolve({dataUrl: canvas.toDataURL(), roiFound:true}); return; }
+        try {
+          const src = cv.imread(canvas);
+          let gray = new cv.Mat(); cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+          // فلتر تقليل الضجيج
+          let blur = new cv.Mat(); cv.bilateralFilter(gray, blur, 9, 75, 75);
+          // CLAHE لتحسين التباين
+          let clahe = new cv.Mat();
+          let claheObj = new cv.CLAHE(OPENCV_PARAMS.claheClip, new cv.Size(OPENCV_PARAMS.claheTile, OPENCV_PARAMS.claheTile));
+          claheObj.apply(blur, clahe);
+          // كشف الحواف
+          let edges = new cv.Mat(); cv.Canny(clahe, edges, OPENCV_PARAMS.cannyLow, OPENCV_PARAMS.cannyHigh);
+          // مورفولوجي لملء الفواصل
+          let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(OPENCV_PARAMS.morphKernel.w, OPENCV_PARAMS.morphKernel.h));
+          cv.morphologyEx(edges, edges, cv.MORPH_CLOSE, kernel);
+          // إيجاد contours
+          let contours = new cv.MatVector(); let hierarchy = new cv.Mat();
+          cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+          // بحث عن مستطيل محتمل للوحة
+          let maxRect = null; let maxArea = 0;
+          for (let i=0;i<contours.size();i++){
+            const cnt = contours.get(i);
+            const peri = cv.arcLength(cnt, true);
+            const approx = new cv.Mat();
+            cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+            if (approx.rows >= 4){
+              const rect = cv.boundingRect(approx);
+              const area = rect.width * rect.height;
+              const ratio = rect.width / rect.height;
+              if (area > maxArea && area > OPENCV_PARAMS.minArea && ratio > OPENCV_PARAMS.minRatio && ratio < OPENCV_PARAMS.maxRatio && rect.width > OPENCV_PARAMS.minWidth){
+                maxArea = area; maxRect = rect;
+              }
+            }
+            cnt.delete(); approx.delete();
+          }
+
+          let resultCanvas = document.createElement('canvas'); let roiFound = false;
+          if (maxRect){
+            roiFound = true;
+            resultCanvas.width = maxRect.width; resultCanvas.height = maxRect.height;
+            const roi = src.roi(maxRect);
+            // معالجة نهائية: تحويل إلى ثنائي مع CLAHE ثم عتبة
+            let roiGray = new cv.Mat(); cv.cvtColor(roi, roiGray, cv.COLOR_RGBA2GRAY);
+            let roiClahe = new cv.Mat(); claheObj.apply(roiGray, roiClahe);
+            cv.threshold(roiClahe, roiClahe, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+            cv.imshow(resultCanvas, roiClahe);
+            roi.delete(); roiGray.delete(); roiClahe.delete();
+          } else {
+            // لا ROI واضح: نعيد نسخة محسنة كاملة (CLAHE)
+            resultCanvas.width = src.cols; resultCanvas.height = src.rows;
+            cv.imshow(resultCanvas, clahe);
+          }
+
+          // تنظيف
+          src.delete(); gray.delete(); blur.delete(); clahe.delete(); edges.delete(); contours.delete(); hierarchy.delete(); claheObj.delete();
+          const dataUrl = resultCanvas.toDataURL('image/png');
+          resolve({dataUrl, roiFound});
+        } catch (err){
+          console.error('OpenCV error', err);
+          resolve({dataUrl: canvas.toDataURL(), roiFound:true});
+        }
+      });
+    }
+
+    /* ===== تمييز نص من DataURL باستخدام Tesseract مع تطهير النص ===== */
+    async function recognizeDataUrl(dataUrl){
+      try {
+        const img = new Image(); img.src = dataUrl; await img.decode();
+        const tmp = document.createElement('canvas'); tmp.width = img.naturalWidth; tmp.height = img.naturalHeight; tmp.getContext('2d').drawImage(img,0,0);
+        const { data: { text } } = await tesseractWorker.recognize(tmp);
+        const plate = normalizePlateText(text);
+        return plate;
+      } catch (e){ console.error('recognize error', e); return ''; }
+    }
+
+    /* تشغيل OCR على كانفاس الحالي (تم النقر يدوياً) */
+    async function runOcrOnCanvas(canvas){
+      const {dataUrl, roiFound} = await preprocessWithOpenCV(canvas);
+      const plate = await recognizeDataUrl(dataUrl);
+      document.getElementById('platePreview').textContent = plate || 'لم يتم التعرف';
+      checkMatch(plate);
+    }
+    
+    async function runOcrOnCurrent(){
+      const c=document.getElementById('canvasPreview');
+      if (c.classList.contains('hidden')) { alert('لا توجد صورة'); return; }
+      await runOcrOnCanvas(c);
+    }
+
+    /* نص اللوحة: يدعم صيغ متعددة عربية ولاتينية وأرقام */
+    function normalizePlateText(text){
+      if (!text) return '';
+      // نسمح بأرقام، حروف لاتينية، حروف عربية، شرطات ومسافات صغيرة
+      let cleaned = text.replace(/[^0-9A-Za-z\u0600-\u06FF\- ]/g,'').trim();
+      // توحيد المسافات والشرط
+      cleaned = cleaned.replace(/[\s\-]+/g,'');
+      return cleaned.toUpperCase();
+    }
+
+    /* مقارنة، تحذير القائمة السوداء والتحديث UI */
+    function checkMatch(plate){
+      const key = (plate||'').replace(/\s+/g,'').toLowerCase();
+      const matchDiv = document.getElementById('matchResult');
+      if (!key){ 
+        matchDiv.innerHTML = '<div class="alert alert-secondary">لم يتم التعرف على لوحة واضحة.</div>'; 
+        return; 
+      }
+      if (blacklist.includes(key)){ 
+        matchDiv.innerHTML = '<div class="alert alert-danger">هذه اللوحة مُدرجة في القائمة السوداء</div>'; 
+        return; 
+      }
+      const found = carsData.find(c => (c.registrationNumber||'').replace(/\s+/g,'').toLowerCase()===key);
+      if (found){
+        matchDiv.innerHTML = `<div class="alert alert-success">
+          <strong>موجودة:</strong> ${esc(found.driverName)} — ${esc(found.position)} — ${esc(found.brand)} — ${esc(found.carName)}
+        </div>`;
+      } else {
+        matchDiv.innerHTML = `<div class="alert alert-warning">اللوحة غير موجودة في السجلات</div>`;
+      }
+    }
+
+    /* ===== أدوات مساعدة أخيرة ===== */
+    function deleteAll(){ 
+      if(!confirm('مسح جميع البيانات؟')) return; 
+      carsData=[]; 
+      persist(); 
+      renderTable(); 
+      updateStats(); 
+    }
+    
+    function refreshData() {
+      renderTable();
+      updateStats();
+    }
+    
+    document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('fileIn').click());
+    document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+
+    /* تنظيف عند الخروج */
+    window.addEventListener('beforeunload', ()=>{ 
+      if (videoStream) videoStream.getTracks().forEach(t=>t.stop()); 
+      if (tesseractWorker) tesseractWorker.terminate(); 
+      if (autoScanTimer) clearInterval(autoScanTimer); 
+    });
+  </script>
 </body>
 </html>
