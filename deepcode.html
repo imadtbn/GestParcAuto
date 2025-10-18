@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>نظام إدارة حضيرة السيارات</title>
+
+    <!-- مكتبات -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.3.2/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+        
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif}
+        body{background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);color:#333;min-height:100vh;line-height:1.6;transition:var(--transition)}
+        body.dark-mode{background:linear-gradient(135deg,#2c3e50 0%,#34495e 100%);color:var(--light-color)}
+        
+        .container{max-width:1400px;margin:0 auto;padding:20px}
+        header{background:linear-gradient(to right,var(--primary-color),var(--dark-color));color:#fff;padding:15px 0;border-radius:12px;margin-bottom:25px;box-shadow:var(--shadow);position:relative;backdrop-filter:blur(10px);border:1px solid var(--glass-border)}
+        .header-content{display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:15px}
+        .logo{height:70px;transition:var(--transition);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))}
+        .logo:hover{transform:scale(1.05)}
+        .header-center{text-align:center;flex-grow:1;padding:0 20px}
+        h1{font-size:2.2rem;margin-bottom:5px;text-shadow:2px 2px 4px rgba(0,0,0,0.3)}
+        .search-header{background-color:var(--glass-bg);padding:10px;border-radius:8px;margin-top:12px;backdrop-filter:blur(4px);border:1px solid var(--glass-border)}
+        .search-box{display:flex;gap:10px}
+        .search-box input{flex:1;padding:10px 12px;border:none;border-radius:30px;font-size:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1);transition:var(--transition)}
+        .search-box input:focus{outline:none;box-shadow:0 2px 10px rgba(52, 152, 219, 0.4)}
+        .main-content{display:flex;flex-wrap:wrap;gap:25px}
+        .controls-panel{flex:1;min-width:320px;background:var(--glass-bg);padding:20px;border-radius:12px;box-shadow:var(--shadow);backdrop-filter:blur(10px);border:1px solid var(--glass-border)}
+        .data-panel{flex:2;min-width:600px;background:var(--glass-bg);padding:20px;border-radius:12px;box-shadow:var(--shadow);backdrop-filter:blur(10px);border:1px solid var(--glass-border)}
+        .dark-mode .controls-panel, .dark-mode .data-panel{background:rgba(52, 73, 94, 0.7)}
+        
+        .controls-buttons{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+        button{background:var(--secondary-color);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:15px;transition:var(--transition);display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        button:hover{background:var(--primary-color);transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.2)}
+        .btn-danger{background:var(--accent-color)}
+        .btn-success{background:var(--success-color)}
+        .btn-warning{background:var(--warning-color)}
+        .btn-outline{background:transparent;border:2px solid var(--secondary-color);color:var(--secondary-color)}
+        .btn-outline:hover{background:var(--secondary-color);color:#fff}
+        
+        .table-container{overflow-x:auto;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.05);max-height:600px;overflow-y:auto;background:rgba(255,255,255,0.8);backdrop-filter:blur(5px)}
+        .dark-mode .table-container{background:rgba(44, 62, 80, 0.7)}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{padding:12px;text-align:right;border-bottom:1px solid #e0e0e0;vertical-align:middle}
+        th{background:var(--primary-color);color:#fff;font-weight:600;position:sticky;top:0;cursor:pointer;transition:var(--transition)}
+        th:hover{background:var(--dark-color)}
+        tr{transition:var(--transition)}
+        tr:hover{background:rgba(52, 152, 219, 0.1)}
+        .actions{display:flex;gap:8px}
+        .action-btn{padding:8px 12px;font-size:14px}
+        
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(5px)}
+        .modal-content{background:#fff;padding:22px;border-radius:12px;width:90%;max-width:800px;box-shadow:0 5px 15px rgba(0,0,0,0.2);max-height:90vh;overflow:auto;animation:modalSlideIn 0.3s ease}
+        .dark-mode .modal-content{background:var(--dark-color);color:var(--light-color)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #eee}
+        .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+        .close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#777;transition:var(--transition)}
+        .close-btn:hover{color:var(--accent-color);transform:rotate(90deg)}
+        
+        .camera-container{position:relative;width:100%;height:340px;background:#000;border-radius:8px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,0.3)}
+        .camera-feed{width:100%;height:100%;object-fit:cover}
+        .camera-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;backdrop-filter: blur(2px);background:rgba(0,0,0,0.5)}
+        .plate-preview{background:#fff;color:#000;padding:8px 14px;border-radius:4px;font-size:20px;font-weight:700;letter-spacing:2px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.2);transition:var(--transition)}
+        .plate-preview.match-found{background:var(--success-color);color:#fff;animation:pulse 1.5s infinite}
+        .plate-preview.match-not-found{background:var(--accent-color);color:#fff;animation:shake 0.5s}
+        
+        .match-result{padding:12px;border-radius:8px;margin-top:12px;display:none;animation:slideIn 0.5s ease}
+        .match-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+        .match-fail{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+        .dark-mode .match-success{background:rgba(46, 204, 113, 0.2);color:#fff;border:1px solid var(--success-color)}
+        .dark-mode .match-fail{background:rgba(231, 76, 60, 0.2);color:#fff;border:1px solid var(--accent-color)}
+        .match-details{margin-top:10px;padding:10px;background:#f8f9fa;border-radius:6px}
+        .dark-mode .match-details{background:rgba(255,255,255,0.1)}
+        
+        .note-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:var(--transition)}
+        .note-cell:hover{overflow:visible;white-space:normal;position:relative;background:#f8f9fa;z-index:2;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .dark-mode .note-cell:hover{background:rgba(255,255,255,0.1)}
+        
+        .alert{position:fixed;top:20px;right:20px;padding:15px 20px;border-radius:8px;box-shadow:var(--shadow);z-index:1100;max-width:400px;animation:fadeIn 0.5s;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2)}
+        .alert-success{background:var(--success-color);color:white}
+        .alert-danger{background:var(--accent-color);color:white}
+        .alert-warning{background:var(--warning-color);color:white}
+        
+        .stats-container{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:15px;margin:15px 0}
+        .stat-card{background:var(--glass-bg);padding:15px;border-radius:8px;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);backdrop-filter:blur(5px);border:1px solid var(--glass-border);transition:var(--transition)}
+        .stat-card:hover{transform:translateY(-5px);box-shadow:0 5px 15px rgba(0,0,0,0.1)}
+        .stat-value{font-size:24px;font-weight:bold;color:var(--primary-color);transition:var(--transition)}
+        .dark-mode .stat-value{color:var(--light-color)}
+        .stat-label{font-size:14px;color:#777;margin-top:5px}
+        .dark-mode .stat-label{color:#ccc}
+        
+        .progress-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:10px}
+        .progress{height:100%;background:var(--secondary-color);transition:width 0.3s}
+        
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes modalSlideIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+        @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+        @keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-5px)}20%,40%,60%,80%{transform:translateX(5px)}}
+        
+        .scanning-animation{animation:pulse 1.5s infinite}
+        .ocr-progress{display:none;margin-top:10px}
+        .form-group{margin-bottom:15px}
+        .form-group label{display:block;margin-bottom:5px;font-weight:600}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:15px;transition:var(--transition)}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--secondary-color);box-shadow:0 0 0 2px rgba(52, 152, 219, 0.2)}
+        .dark-mode .form-group input,.dark-mode .form-group select,.dark-mode .form-group textarea{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:var(--light-color)}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+        .full-width{grid-column:1/3}
+        
+        .ocr-options{margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px}
+        .dark-mode .ocr-options{background:rgba(255,255,255,0.1)}
+        .option-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+        
+        .theme-toggle{position:absolute;left:20px;top:50%;transform:translateY(-50%);background:transparent;border:2px solid white;color:white;padding:8px 12px;border-radius:50%;cursor:pointer;transition:var(--transition)}
+        .theme-toggle:hover{background:white;color:var(--secondary-color)}
+        
+        .loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;border-radius:8px}
+        .spinner{border:4px solid rgba(255,255,255,0.3);border-top:4px solid white;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;margin-bottom:15px}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        
+        .plate-highlight{position:absolute;border:2px solid var(--success-color);box-shadow:0 0 10px var(--success-color);animation:pulse 1.5s infinite;pointer-events:none}
+        
+        @media (max-width:768px){
+            .main-content{flex-direction:column}
+            .controls-panel,.data-panel{min-width:100%}
+            .header-content{flex-direction:column}
+            .form-row{grid-template-columns:1fr}
+            .theme-toggle{position:relative;left:auto;top:auto;transform:none;margin-top:10px}
+            h1{font-size:1.8rem}
+            .logo{height:50px}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="theme-toggle" id="dark-mode-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="header-content">
+                <img src="https://via.placeholder.com/150x70/2c3e50/ffffff?text=شعار+الشركة" alt="شعار" class="logo">
+                <div class="header-center">
+                    <h1>نظام إدارة حضيرة السيارات</h1>
+                    <p>إدارة وتتبع معلومات السيارات والسائقين</p>
+                    <div class="search-header">
+                        <div class="search-box">
+                            <input id="searchInput" type="text" placeholder="ابحث بأي معلومة (اسم السائق، رقم التسجيل، النوع، العلامة...)">
+                            <button onclick="searchData()"><i class="fas fa-search"></i> بحث</button>
+                            <button class="btn-outline" onclick="clearSearch()"><i class="fas fa-times"></i> مسح</button>
+                        </div>
+                    </div>
+                </div>
+                <img src="https://via.placeholder.com/150x70/3498db/ffffff?text=النظام" alt="شعار النظام" class="logo">
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <h2><i class="fas fa-cogs"></i> إدارة البيانات</h2>
+                    <button class="btn-warning" onclick="showStatsModal()"><i class="fas fa-chart-bar"></i> الإحصائيات</button>
+                </div>
+
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCars">0</div>
+                        <div class="stat-label">إجمالي السيارات</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="toyotaCars">0</div>
+                        <div class="stat-label">سيارات تويوتا</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="hyundaiCars">0</div>
+                        <div class="stat-label">سيارات هيونداي</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="withNotes">0</div>
+                        <div class="stat-label">سيارات بملاحظات</div>
+                    </div>
+                </div>
+
+                <div class="controls-buttons">
+                    <button class="btn-success" onclick="openAddCarModal()"><i class="fas fa-plus-circle"></i> إضافة سيارة جديدة</button>
+                    <button onclick="document.getElementById('fileInput').click()"><i class="fas fa-file-excel"></i> تحميل من Excel</button>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="loadExcelFile()">
+                    <button class="btn-success" onclick="exportToExcel()"><i class="fas fa-download"></i> تصدير إلى Excel</button>
+                    <button class="btn-warning" onclick="clearAllData()"><i class="fas fa-trash-alt"></i> مسح جميع البيانات</button>
+
+                    <div style="display:flex;gap:8px;flex-direction:column">
+                        <button onclick="openPlateScanner()"><i class="fas fa-camera"></i> مسح لوحة الترقيم (كاميرا)</button>
+                        <button onclick="document.getElementById('uploadImageInput').click()"><i class="fas fa-image"></i> تحليل صورة من المعرض</button>
+                        <input type="file" id="uploadImageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+                    </div>
+                </div>
+
+                <div class="ocr-options">
+                    <h4><i class="fas fa-sliders-h"></i> إعدادات التعرف البصري</h4>
+                    <div class="option-group">
+                        <button class="btn-outline" onclick="toggleOcrMode('ara')"><i class="fas fa-language"></i> العربية</button>
+                        <button class="btn-outline" onclick="toggleOcrMode('eng')"><i class="fas fa-language"></i> الإنجليزية</button>
+                        <button class="btn-outline" onclick="toggleOcrMode('ara+eng')"><i class="fas fa-globe"></i> الاثنان معاً</button>
+                    </div>
+                    <div class="option-group">
+                        <button class="btn-outline" onclick="togglePlateMode('latin')"><i class="fas fa-font"></i> اللاتينية أولاً</button>
+                        <button class="btn-outline" onclick="togglePlateMode('arabic')"><i class="fas fa-font"></i> العربية أولاً</button>
+                    </div>
+                    <div id="currentOcrMode" style="margin-top:10px;padding:8px;background:#e9ecef;border-radius:4px;text-align:center">الوضع الحالي: العربية والإنجليزية</div>
+                    <div id="currentPlateMode" style="margin-top:5px;padding:8px;background:#e9ecef;border-radius:4px;text-align:center">الأولوية: الأرقام اللاتينية</div>
+                </div>
+            </div>
+
+            <div class="data-panel">
+                <h2><i class="fas fa-database"></i> قاعدة بيانات السيارات</h2>
+                <div class="table-container">
+                    <table id="carsTable">
+                        <thead>
+                            <tr>
+                                <th data-column="driverName" onclick="sortTable('driverName')">إسم مستخدم المركبة <i class="fas fa-sort"></i></th>
+                                <th data-column="position" onclick="sortTable('position')">الوحدة/المصلحة <i class="fas fa-sort"></i></th>
+                                <th data-column="carName" onclick="sortTable('carName')">نوع المركبة <i class="fas fa-sort"></i></th>
+                                <th data-column="brand" onclick="sortTable('brand')">العلامة التجارية <i class="fas fa-sort"></i></th>
+                                <th data-column="registrationNumber" onclick="sortTable('registrationNumber')">رقم تسجيل المركبة <i class="fas fa-sort"></i></th>
+                                <th data-column="phoneNumber" onclick="sortTable('phoneNumber')">هاتف المستخدم <i class="fas fa-sort"></i></th>
+                                <th data-column="note" onclick="sortTable('note')">الملاحظة <i class="fas fa-sort"></i></th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="addCarModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-car"></i> إضافة / تعديل سيارة</h3>
+                <button class="close-btn" onclick="closeModal('addCarModal')">&times;</button>
+            </div>
+            <form id="carForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>إسم مستخدم المركبة</label>
+                        <input id="driverName" required type="text" />
+                    </div>
+                    <div class="form-group">
+                        <label>الوحدة/المصلحة</label>
+                        <input id="position" required type="text" />
+                    </div>
+                    <div class="form-group">
+                        <label>العلامة التجارية</label>
+                        <select id="brand" required onchange="updateCarModels()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع المركبة</label>
+                        <select id="carName" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>رقم تسجيل المركبة</label>
+                        <input id="registrationNumber" required type="text" />
+                    </div>
+                    <div class="form-group">
+                        <label>هاتف المستخدم</label>
+                        <input id="phoneNumber" required type="text" />
+                    </div>
+                    <div class="form-group full-width">
+                        <label>الملاحظة</label>
+                        <textarea id="note" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn-success"><i class="fas fa-save"></i> حفظ</button>
+                    <button type="button" class="btn-outline" onclick="closeModal('addCarModal')">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تأكيد الحذف</h3>
+                <button class="close-btn" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <p>هل أنت متأكد من حذف هذه السيارة؟</p>
+            <div class="modal-footer">
+                <button class="btn-danger" id="confirmDelete">نعم، احذف</button>
+                <button class="btn-outline" onclick="closeModal('deleteModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sticky-note"></i> تحرير الملاحظة</h3>
+                <button class="close-btn" onclick="closeModal('noteModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>الملاحظة</label>
+                <textarea id="noteText" rows="6"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-success" id="saveNote">حفظ</button>
+                <button class="btn-outline" onclick="closeModal('noteModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plate Scanner Modal -->
+    <div class="modal" id="plateScannerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> مسح لوحة الترقيم</h3>
+                <button class="close-btn" onclick="closeModal('plateScannerModal')">&times;</button>
+            </div>
+
+            <div class="camera-container" id="cameraContainer">
+                <div class="loading-overlay" id="cameraLoading" style="display:none">
+                    <div class="spinner"></div>
+                    <p>جاري معالجة الصورة...</p>
+                </div>
+                <div class="camera-overlay" id="cameraOverlay">
+                    <i class="fas fa-camera fa-3x"></i>
+                    <p id="cameraOverlayText">انقر تفعيل الكاميرا لبدء المسح</p>
+                    <div style="margin-top:12px;display:flex;gap:8px">
+                        <button class="btn-success" id="enableCameraBtn" onclick="enableCamera()">تفعيل الكاميرا</button>
+                        <button class="btn-outline" id="stopCameraBtn" onclick="stopCamera()" style="display:none">إيقاف الكاميرا</button>
+                    </div>
+                </div>
+                <!-- عنصر الفيديو سيُضاف ديناميكياً -->
+            </div>
+
+            <div class="ocr-progress" id="ocrProgress">
+                <p>جارٍ تحليل الصورة...</p>
+                <div class="progress-bar">
+                    <div class="progress" id="ocrProgressBar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div style="margin-top:8px">
+                <div class="plate-preview" id="platePreview">--- ---</div>
+            </div>
+
+            <div style="margin-top:8px">
+                <label>أو أدخل رقم اللوحة يدوياً:</label>
+                <input type="text" id="manualPlateInput" placeholder="أدخل رقم اللوحة" />
+            </div>
+
+            <div class="match-result" id="matchResult">
+                <h4 id="matchTitle"></h4>
+                <div id="matchDetails" class="match-details"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-success" onclick="scanPlate()"><i class="fas fa-camera"></i> مسح</button>
+                <button class="btn-outline" onclick="closeModal('plateScannerModal')">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-chart-bar"></i> إحصائيات قاعدة البيانات</h3>
+                <button class="close-btn" onclick="closeModal('statsModal')">&times;</button>
+            </div>
+            <div id="statsContent">
+                <!-- سيتم تعبئتها ديناميكياً -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeModal('statsModal')">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+/* ===================== بيانات ومساعدة عامة ===================== */
+let carsData = [];
+let currentEditIndex = -1;
+let currentNoteEditIndex = -1;
+let sortColumn = null;
+let sortDirection = 'asc';
+let localStorageKey = 'carsData_v3';
+let videoStream = null;
+let currentOcrMode = 'ara+eng';
+let currentPlateMode = 'latin'; // 'latin' or 'arabic'
+
+/* علامات تجارية وطرازات */
+const carBrandsAndModels = {
+    "تويوتا": ["ياريس","كورولا","كامري","افالون","RAV4","هايلكس","لاند كروزر","برادو","فورتشنر"],
+    "هيونداي": ["سوناتا","إلنترا","اكسنت","توسان","سانتا في","كريتا"],
+    "نيسان": ["صني","التيما","باترول","جوك","اكس-تريل","سنترا"],
+    "هوندا": ["سيفيك","أكورد","CR-V","HR-V"],
+    "شيفروليه": ["كروز","ماليبو","كابتيفا","سلفرادو"],
+    "مرسيدس": ["الفئة A","الفئة C","الفئة E","الفئة S"],
+    "بي إم دبليو": ["السلسلة 1","السلسلة 3","السلسلة 5","X5"],
+    "أودي": ["A3","A4","A6","Q5"],
+    "كيا": ["ريو","سبورتاج","سورينتو"],
+    "بيجو": ["206","308","3008"],
+    "تسلا": ["Model 3","Model Y","Model S"]
+};
+
+/* ===================== تحميل وحفظ البيانات ===================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(localStorageKey);
+    if (saved) carsData = JSON.parse(saved);
+    populateBrands();
+    renderTable();
+    updateStats();
+    document.getElementById('saveNote').addEventListener('click', saveNote);
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') searchData();
+    });
+    document.getElementById('dark-mode-toggle').addEventListener('click', toggleDarkMode);
+    
+    // استعادة الوضع الليلي إذا كان مفعلًا
+    const darkMode = localStorage.getItem('darkMode') === 'true';
+    if (darkMode) {
+        document.body.classList.add('dark-mode');
+        document.getElementById('dark-mode-toggle').innerHTML = '<i class="fas fa-sun"></i>';
+    }
+});
+
+/* تعبئة العلامات */
+function populateBrands(){
+    const brandSelect = document.getElementById('brand');
+    brandSelect.innerHTML = '<option value="">اختر العلامة التجارية</option>';
+    Object.keys(carBrandsAndModels).sort().forEach(b => {
+        const opt = document.createElement('option'); opt.value = b; opt.textContent = b; brandSelect.appendChild(opt);
+    });
+}
+
+/* تحديث الطرازات */
+function updateCarModels(){
+    const brand = document.getElementById('brand').value;
+    const carName = document.getElementById('carName');
+    carName.innerHTML = '<option value="">اختر اسم المركبة</option>';
+    if (brand && carBrandsAndModels[brand]) {
+        carBrandsAndModels[brand].sort().forEach(m => {
+            const o = document.createElement('option'); o.value = m; o.textContent = m; carName.appendChild(o);
+        });
+    }
+}
+
+/* حفظ محلي */
+function saveLocal(){
+    localStorage.setItem(localStorageKey, JSON.stringify(carsData));
+    updateStats();
+}
+
+/* ===================== عرض، بحث، ترتيب ===================== */
+function renderTable(data = carsData){
+    const tbody = document.getElementById('carsTableBody');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0){
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="8" style="text-align:center;padding:30px">لا توجد بيانات لعرضها</td>`;
+        tbody.appendChild(row);
+        return;
+    }
+    data.forEach((car, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${escapeHtml(car.driverName||'')}</td>
+            <td>${escapeHtml(car.position||'')}</td>
+            <td>${escapeHtml(car.carName||'')}</td>
+            <td>${escapeHtml(car.brand||'')}</td>
+            <td>${escapeHtml(car.registrationNumber||'')}</td>
+            <td>${escapeHtml(car.phoneNumber||'')}</td>
+            <td class="note-cell">
+                ${car.note ? escapeHtml(car.note) : ''}
+                <button class="edit-note-btn" onclick="editNote(${idx})" style="margin-right:6px;background:none;border:none;color:var(--secondary-color);cursor:pointer"><i class="fas fa-edit"></i></button>
+            </td>
+            <td class="actions">
+                <button class="action-btn" onclick="editCar(${idx})"><i class="fas fa-edit"></i> تعديل</button>
+                <button class="action-btn btn-danger" onclick="confirmDelete(${idx})"><i class="fas fa-trash"></i> حذف</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function escapeHtml(s){ 
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
+}
+
+function searchData(){
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (!q){ renderTable(); return; }
+    const filtered = carsData.filter(car =>
+        (car.driverName||'').toLowerCase().includes(q) ||
+        (car.position||'').toLowerCase().includes(q) ||
+        (car.brand||'').toLowerCase().includes(q) ||
+        (car.carName||'').toLowerCase().includes(q) ||
+        (car.registrationNumber||'').toLowerCase().includes(q) ||
+        (car.phoneNumber||'').toLowerCase().includes(q) ||
+        (car.note||'').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+}
+
+function clearSearch(){
+    document.getElementById('searchInput').value = '';
+    renderTable();
+}
+
+function sortTable(column){
+    // reset classes
+    document.querySelectorAll('th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
+    if (sortColumn === column) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    else { sortColumn = column; sortDirection = 'asc'; }
+    const activeTh = document.querySelector(`th[data-column="${column}"]`);
+    if (activeTh) activeTh.classList.add(sortDirection==='asc'?'sort-asc':'sort-desc');
+
+    carsData.sort((a,b)=>{
+        let A = (a[column]||'').toString().toLowerCase();
+        let B = (b[column]||'').toString().toLowerCase();
+        if (A < B) return sortDirection==='asc'? -1:1;
+        if (A > B) return sortDirection==='asc'? 1:-1;
+        return 0;
+    });
+    renderTable();
+}
+
+/* ===================== الإحصائيات ===================== */
+function updateStats(){
+    document.getElementById('totalCars').textContent = carsData.length;
+    
+    const toyotaCount = carsData.filter(car => car.brand === 'تويوتا').length;
+    document.getElementById('toyotaCars').textContent = toyotaCount;
+    
+    const hyundaiCount = carsData.filter(car => car.brand === 'هيونداي').length;
+    document.getElementById('hyundaiCars').textContent = hyundaiCount;
+    
+    const withNotesCount = carsData.filter(car => car.note && car.note.trim() !== '').length;
+    document.getElementById('withNotes').textContent = withNotesCount;
+}
+
+function showStatsModal(){
+    const statsContent = document.getElementById('statsContent');
+    statsContent.innerHTML = '';
+    
+    // إحصائيات عامة
+    const generalStats = document.createElement('div');
+    generalStats.className = 'stats-container';
+    generalStats.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${carsData.length}</div>
+            <div class="stat-label">إجمالي السيارات</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${carsData.filter(car => car.note && car.note.trim() !== '').length}</div>
+            <div class="stat-label">سيارات بملاحظات</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${new Set(carsData.map(car => car.brand)).size}</div>
+            <div class="stat-label">علامات تجارية مختلفة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${new Set(carsData.map(car => car.position)).size}</div>
+            <div class="stat-label">وحدات/مصالح مختلفة</div>
+        </div>
+    `;
+    statsContent.appendChild(generalStats);
+    
+    // إحصائيات حسب العلامة التجارية
+    const brandStats = document.createElement('div');
+    brandStats.innerHTML = '<h4 style="margin:20px 0 10px">توزيع السيارات حسب العلامة التجارية</h4>';
+    
+    const brandCounts = {};
+    carsData.forEach(car => {
+        if (car.brand) {
+            brandCounts[car.brand] = (brandCounts[car.brand] || 0) + 1;
+        }
+    });
+    
+    Object.entries(brandCounts)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([brand, count]) => {
+            const percentage = carsData.length > 0 ? Math.round((count / carsData.length) * 100) : 0;
+            const statRow = document.createElement('div');
+            statRow.style.marginBottom = '10px';
+            statRow.innerHTML = `
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                    <span>${brand}</span>
+                    <span>${count} سيارة (${percentage}%)</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" style="width:${percentage}%"></div>
+                </div>
+            `;
+            brandStats.appendChild(statRow);
+        });
+    
+    statsContent.appendChild(brandStats);
+    
+    document.getElementById('statsModal').style.display = 'flex';
+}
+
+/* ===================== إضافة / تعديل / حذف / ملاحظات ===================== */
+function openAddCarModal(){
+    document.getElementById('carForm').reset();
+    currentEditIndex = -1;
+    document.getElementById('addCarModal').style.display = 'flex';
+}
+
+document.getElementById('carForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const car = {
+        driverName: document.getElementById('driverName').value.trim(),
+        position: document.getElementById('position').value.trim(),
+        brand: document.getElementById('brand').value,
+        carName: document.getElementById('carName').value,
+        registrationNumber: document.getElementById('registrationNumber').value.trim(),
+        phoneNumber: document.getElementById('phoneNumber').value.trim(),
+        note: document.getElementById('note').value.trim()
+    };
+    if (currentEditIndex === -1){ 
+        carsData.push(car); 
+        showAlert('تم إضافة السيارة بنجاح','success'); 
+    }
+    else { 
+        carsData[currentEditIndex] = car; 
+        showAlert('تم تعديل السيارة بنجاح','success'); 
+    }
+    saveLocal(); renderTable(); closeModal('addCarModal');
+});
+
+function editCar(index){
+    const car = carsData[index];
+    document.getElementById('driverName').value = car.driverName||'';
+    document.getElementById('position').value = car.position||'';
+    document.getElementById('brand').value = car.brand||'';
+    updateCarModels();
+    setTimeout(()=>{ document.getElementById('carName').value = car.carName||''; },100);
+    document.getElementById('registrationNumber').value = car.registrationNumber||'';
+    document.getElementById('phoneNumber').value = car.phoneNumber||'';
+    document.getElementById('note').value = car.note||'';
+    currentEditIndex = index;
+    document.getElementById('addCarModal').style.display = 'flex';
+}
+
+function editNote(index){
+    currentNoteEditIndex = index;
+    document.getElementById('noteText').value = carsData[index].note || '';
+    document.getElementById('noteModal').style.display = 'flex';
+}
+
+function saveNote(){
+    if (currentNoteEditIndex !== -1){
+        carsData[currentNoteEditIndex].note = document.getElementById('noteText').value.trim();
+        saveLocal(); renderTable(); showAlert('تم حفظ الملاحظة','success'); closeModal('noteModal');
+    }
+}
+
+function confirmDelete(index){
+    currentEditIndex = index;
+    document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById('confirmDelete').onclick = ()=> deleteCar(currentEditIndex);
+}
+
+function deleteCar(index){
+    carsData.splice(index,1); saveLocal(); renderTable(); showAlert('تم حذف السيارة','success'); closeModal('deleteModal');
+}
+
+function clearAllData(){
+    if (confirm('هل أنت متأكد من مسح جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        carsData = [];
+        saveLocal(); renderTable(); showAlert('تم مسح جميع البيانات','success');
+    }
+}
+
+function closeModal(id){ 
+    document.getElementById(id).style.display = 'none'; 
+    // إيقاف الكاميرا إذا كانت تعمل
+    if (id === 'plateScannerModal') {
+        stopCamera();
+    }
+}
+
+/* ===================== Excel استيراد / تصدير ===================== */
+function loadExcelFile(){
+    const fi = document.getElementById('fileInput'); const file = fi.files[0];
+    if (!file){ showAlert('يرجى اختيار ملف Excel','danger'); return; }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data,{type:'array'});
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const imported = jsonData.map(row => ({
+            driverName: row['إسم مستخدم المركبة'] || row['driverName'] || '',
+            position: row['الوحدة/المصلحة'] || row['position'] || '',
+            brand: row['العلامة التجارية'] || row['brand'] || '',
+            carName: row['نوع المركبة'] || row['carName'] || '',
+            registrationNumber: row['رقم تسجيل المركبة'] || row['registrationNumber'] || '',
+            phoneNumber: row['هاتف المستخدم'] || row['phoneNumber'] || '',
+            note: row['الملاحظة'] || row['note'] || ''
+        }));
+        carsData = [...carsData, ...imported];
+        saveLocal(); renderTable(); showAlert('تم تحميل البيانات من Excel','success'); fi.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function exportToExcel(){
+    if (!carsData.length){ showAlert('لا توجد بيانات لتصديرها','danger'); return; }
+    const exportData = carsData.map(c => ({
+        'إسم مستخدم المركبة': c.driverName,
+        'الوحدة/المصلحة': c.position,
+        'العلامة التجارية': c.brand,
+        'نوع المركبة': c.carName,
+        'رقم تسجيل المركبة': c.registrationNumber,
+        'هاتف المستخدم': c.phoneNumber,
+        'الملاحظة': c.note || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'بيانات السيارات');
+    XLSX.writeFile(wb, 'بيانات_السيارات.xlsx');
+    showAlert('تم تصدير البيانات','success');
+}
+
+/* ===================== تنبيهات ===================== */
+function showAlert(message, type='success'){
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 4500);
+}
+
+/* ===================== ANPR باستخدام الكاميرا ورفع الصورة ===================== */
+
+/* تفعيل الكاميرا وعرض الفيديو */
+async function enableCamera(){
+    const container = document.getElementById('cameraContainer');
+    const overlay = document.getElementById('cameraOverlay');
+    const overlayText = document.getElementById('cameraOverlayText');
+    overlayText.textContent = 'جارٍ تفعيل الكاميرا...';
+    // إزالة فيديو موجود إن وُجد
+    const existingVideo = document.getElementById('cameraFeed');
+    if (existingVideo) existingVideo.remove();
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        videoStream = stream;
+        const video = document.createElement('video');
+        video.id = 'cameraFeed'; video.className = 'camera-feed'; video.autoplay = true; video.playsInline = true;
+        video.srcObject = stream;
+        container.appendChild(video);
+        overlay.style.display = 'none';
+        document.getElementById('stopCameraBtn').style.display = 'inline-block';
+        // wait for video to be ready
+        await new Promise(resolve => video.onloadedmetadata = resolve);
+    } catch (err){
+        overlayText.textContent = 'تعذر الوصول إلى الكاميرا. تأكد من أذونات المتصفح.';
+        console.error(err);
+        showAlert('تعذر الوصول إلى الكاميرا', 'danger');
+    }
+}
+
+/* إيقاف الكاميرا */
+function stopCamera(){
+    if (videoStream){
+        videoStream.getTracks().forEach(t => t.stop());
+        videoStream = null;
+    }
+    const v = document.getElementById('cameraFeed'); if (v) v.remove();
+    document.getElementById('cameraOverlay').style.display = 'flex';
+    document.getElementById('cameraOverlayText').textContent = 'انقر تفعيل الكاميرا لبدء المسح';
+    document.getElementById('stopCameraBtn').style.display = 'none';
+}
+
+/* التقاط إطار من الفيديو أو استخدام صورة مرفوعة ثم تطبيق معالجة بسيطة ثم التعرف بواسطة Tesseract */
+async function scanPlate(){
+    const manual = document.getElementById('manualPlateInput').value.trim();
+    let plateNumber = '';
+    if (manual){
+        plateNumber = manual;
+        displayPlateAndCheck(plateNumber);
+        return;
+    }
+
+    const video = document.getElementById('cameraFeed');
+    if (!video) { showAlert('لا توجد كاميرا مفعلة أو صورة. يمكنك إدخال اللوحة يدوياً أو تفعيل الكاميرا.','danger'); return; }
+
+    // عرض تقدم المسح
+    const progressBar = document.getElementById('ocrProgressBar');
+    const ocrProgress = document.getElementById('ocrProgress');
+    const cameraLoading = document.getElementById('cameraLoading');
+    cameraLoading.style.display = 'flex';
+    ocrProgress.style.display = 'block';
+    progressBar.style.width = '0%';
+    
+    // إنشاء كانفاس للرسم والمعالجة
+    const canvas = document.createElement('canvas');
+    const vw = video.videoWidth, vh = video.videoHeight;
+    // نأخذ نسبة وسطية لتركيز اللوحة (crop بسيط مركزي)
+    const cropW = Math.floor(vw * 0.9);
+    const cropH = Math.floor(vh * 0.25); // لوحات عادة قصيرة
+    const sx = Math.floor((vw - cropW) / 2);
+    const sy = Math.floor((vh - cropH) / 2.2);
+
+    canvas.width = cropW; canvas.height = cropH;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, cropW, cropH);
+
+    // تطبيق معالجة متقدمة للصورة
+    let imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+    imgData = applyAdvancedPreprocessing(imgData);
+    ctx.putImageData(imgData,0,0);
+
+    // scale up for better OCR
+    const scaled = document.createElement('canvas');
+    const scaleFactor = 2;
+    scaled.width = canvas.width * scaleFactor; scaled.height = canvas.height * scaleFactor;
+    scaled.getContext('2d').drawImage(canvas,0,0,scaled.width,scaled.height);
+
+    // عرض معاينة (اختياري) وكذلك استخراج نص
+    try {
+        // استخدم Tesseract مع دعم العربية والإنجليزية
+        const worker = Tesseract.createWorker({ 
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    const progress = Math.round(m.progress * 100);
+                    progressBar.style.width = `${progress}%`;
+                }
+            }
+        });
+        
+        progressBar.style.width = '20%';
+        await worker.load();
+        progressBar.style.width = '40%';
+        await worker.loadLanguage(currentOcrMode);
+        progressBar.style.width = '60%';
+        await worker.initialize(currentOcrMode);
+        progressBar.style.width = '80%';
+        // اعدادات لتحسين الدقة
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzابتثجحخدذرزسشصضطظعغفقكلمنهوي',
+            tessedit_pageseg_mode: '7' // معالجة سطر واحد
+        });
+        
+        const { data: { text } } = await worker.recognize(scaled);
+        await worker.terminate();
+        progressBar.style.width = '100%';
+
+        // تنظيف النص المستخرج
+        plateNumber = normalizePlateText(text);
+        if (!plateNumber) plateNumber = text.trim();
+    } catch (err){
+        console.error(err);
+        showAlert('حدث خطأ أثناء تحليل الصورة','danger');
+    } finally {
+        cameraLoading.style.display = 'none';
+        setTimeout(() => {
+            ocrProgress.style.display = 'none';
+        }, 500);
+    }
+
+    displayPlateAndCheck(plateNumber);
+}
+
+/* معالجة صورة مرفوعة */
+function handleImageUpload(e){
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+        const img = new Image();
+        img.src = ev.target.result;
+        await new Promise(r=>img.onload=r);
+        
+        // canvas resize and preprocess
+        const canvas = document.createElement('canvas');
+        // crop center wide for typical plate aspect
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const cropW = Math.floor(W * 0.9);
+        const cropH = Math.floor(H * 0.25);
+        const sx = Math.floor((W - cropW)/2);
+        const sy = Math.floor((H - cropH)/2.2);
+        canvas.width = cropW; canvas.height = cropH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, cropW, cropH);
+        
+        // تطبيق معالجة متقدمة للصورة
+        let imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+        imgData = applyAdvancedPreprocessing(imgData);
+        ctx.putImageData(imgData,0,0);
+        
+        const scaled = document.createElement('canvas');
+        scaled.width = canvas.width * 2; scaled.height = canvas.height * 2;
+        scaled.getContext('2d').drawImage(canvas,0,0,scaled.width,scaled.height);
+        
+        // عرض تقدم المسح
+        const progressBar = document.getElementById('ocrProgressBar');
+        const ocrProgress = document.getElementById('ocrProgress');
+        const cameraLoading = document.getElementById('cameraLoading');
+        cameraLoading.style.display = 'flex';
+        ocrProgress.style.display = 'block';
+        progressBar.style.width = '0%';
+        
+        // OCR
+        try {
+            const worker = Tesseract.createWorker({ 
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        const progress = Math.round(m.progress * 100);
+                        progressBar.style.width = `${progress}%`;
+                    }
+                }
+            });
+            
+            progressBar.style.width = '20%';
+            await worker.load();
+            progressBar.style.width = '40%';
+            await worker.loadLanguage(currentOcrMode);
+            progressBar.style.width = '60%';
+            await worker.initialize(currentOcrMode);
+            progressBar.style.width = '80%';
+            
+            // اعدادات لتحسين الدقة
+            await worker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzابتثجحخدذرزسشصضطظعغفقكلمنهوي',
+                tessedit_pageseg_mode: '7' // معالجة سطر واحد
+            });
+            
+            const { data: { text } } = await worker.recognize(scaled);
+            await worker.terminate();
+            progressBar.style.width = '100%';
+            
+            const plate = normalizePlateText(text) || text.trim();
+            displayPlateAndCheck(plate);
+        } catch (err){
+            console.error(err); showAlert('خطأ أثناء تحليل الصورة','danger');
+        } finally {
+            cameraLoading.style.display = 'none';
+            setTimeout(() => {
+                ocrProgress.style.display = 'none';
+            }, 500);
+        }
+    };
+    reader.readAsDataURL(file);
+    // reset input
+    e.target.value = '';
+}
+
+/* تطبيق معالجة متقدمة للصورة لتحسين دقة التعرف */
+function applyAdvancedPreprocessing(imgData) {
+    const data = imgData.data;
+    const width = imgData.width;
+    const height = imgData.height;
+    
+    // 1. تحويل إلى تدرج الرمادي
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        data[i] = data[i + 1] = data[i + 2] = gray;
+    }
+    
+    // 2. تطبيق مرشح Gaussian Blur لتقليل الضوضاء
+    applyGaussianBlur(imgData, 1);
+    
+    // 3. تحسين التباين باستخدام CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    applyCLAHE(imgData);
+    
+    // 4. تطبيق العتبة التكيفية (Adaptive Thresholding)
+    applyAdaptiveThreshold(imgData);
+    
+    return imgData;
+}
+
+/* تطبيق مرشح Gaussian Blur */
+function applyGaussianBlur(imgData, radius) {
+    const data = imgData.data;
+    const width = imgData.width;
+    const height = imgData.height;
+    
+    // إنشاء نسخة من البيانات الأصلية
+    const originalData = new Uint8ClampedArray(data);
+    
+    // تطبيق المرشح
+    for (let y = radius; y < height - radius; y++) {
+        for (let x = radius; x < width - radius; x++) {
+            let sum = 0;
+            let count = 0;
+            
+            for (let ky = -radius; ky <= radius; ky++) {
+                for (let kx = -radius; kx <= radius; kx++) {
+                    const idx = ((y + ky) * width + (x + kx)) * 4;
+                    sum += originalData[idx];
+                    count++;
+                }
+            }
+            
+            const idx = (y * width + x) * 4;
+            data[idx] = data[idx + 1] = data[idx + 2] = sum / count;
+        }
+    }
+}
+
+/* تطبيق CLAHE لتحسين التباين */
+function applyCLAHE(imgData) {
+    const data = imgData.data;
+    const width = imgData.width;
+    const height = imgData.height;
+    
+    // تقسيم الصورة إلى كتل صغيرة
+    const blockSize = 8;
+    const clipLimit = 3.0;
+    
+    for (let blockY = 0; blockY < height; blockY += blockSize) {
+        for (let blockX = 0; blockX < width; blockX += blockX + blockSize) {
+            // حساب الهيستوجرام للكتلة
+            const hist = new Array(256).fill(0);
+            for (let y = blockY; y < Math.min(blockY + blockSize, height); y++) {
+                for (let x = blockX; x < Math.min(blockX + blockSize, width); x++) {
+                    const idx = (y * width + x) * 4;
+                    hist[data[idx]]++;
+                }
+            }
+            
+            // تطبيق Clip Limit
+            const clipAmount = Math.floor(blockSize * blockSize * clipLimit / 256);
+            let totalClip = 0;
+            for (let i = 0; i < 256; i++) {
+                if (hist[i] > clipAmount) {
+                    totalClip += hist[i] - clipAmount;
+                    hist[i] = clipAmount;
+                }
+            }
+            
+            // توزيع القيم المقطوعة
+            const redistAmount = Math.floor(totalClip / 256);
+            for (let i = 0; i < 256; i++) {
+                hist[i] += redistAmount;
+            }
+            
+            // حساب الهيستوجرام التراكمي
+            const cumulativeHist = new Array(256);
+            cumulativeHist[0] = hist[0];
+            for (let i = 1; i < 256; i++) {
+                cumulativeHist[i] = cumulativeHist[i - 1] + hist[i];
+            }
+            
+            // تطبيق تحويل الهيستوجرام
+            const totalPixels = blockSize * blockSize;
+            for (let y = blockY; y < Math.min(blockY + blockSize, height); y++) {
+                for (let x = blockX; x < Math.min(blockX + blockSize, width); x++) {
+                    const idx = (y * width + x) * 4;
+                    const value = data[idx];
+                    const newValue = Math.floor(cumulativeHist[value] * 255 / totalPixels);
+                    data[idx] = data[idx + 1] = data[idx + 2] = newValue;
+                }
+            }
+        }
+    }
+}
+
+/* تطبيق العتبة التكيفية */
+function applyAdaptiveThreshold(imgData) {
+    const data = imgData.data;
+    const width = imgData.width;
+    const height = imgData.height;
+    
+    const blockSize = 15;
+    const C = 5;
+    
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let sum = 0;
+            let count = 0;
+            
+            for (let ky = -Math.floor(blockSize/2); ky <= Math.floor(blockSize/2); ky++) {
+                for (let kx = -Math.floor(blockSize/2); kx <= Math.floor(blockSize/2); kx++) {
+                    const ny = y + ky;
+                    const nx = x + kx;
+                    
+                    if (ny >= 0 && ny < height && nx >= 0 && nx < width) {
+                        const idx = (ny * width + nx) * 4;
+                        sum += data[idx];
+                        count++;
+                    }
+                }
+            }
+            
+            const threshold = (sum / count) - C;
+            const idx = (y * width + x) * 4;
+            const value = data[idx] > threshold ? 255 : 0;
+            data[idx] = data[idx + 1] = data[idx + 2] = value;
+        }
+    }
+}
+
+/* عرض اللوحة و المقارنة بقاعدة البيانات */
+function displayPlateAndCheck(plate){
+    const preview = document.getElementById('platePreview');
+    const result = document.getElementById('matchResult');
+    const title = document.getElementById('matchTitle');
+    const det = document.getElementById('matchDetails');
+
+    const cleaned = (plate||'').replace(/\s+/g,'').trim();
+    preview.textContent = cleaned || '--- ---';
+    preview.classList.remove('match-found', 'match-not-found');
+
+    if (!cleaned){
+        result.style.display = 'block'; result.className = 'match-result match-fail';
+        title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> لم يتم استخراج نص صالح';
+        det.innerHTML = '<p>حاول مرة أخرى أو أدخل اللوحة يدوياً.</p>';
+        preview.classList.add('match-not-found');
+        return;
+    }
+
+    // البحث بالمقارنة بعد تنظيف الحقول في قاعدة البيانات
+    const matched = carsData.find(c => {
+        const dbPlate = (c.registrationNumber||'').replace(/\s+/g,'').toLowerCase();
+        const scannedPlate = cleaned.toLowerCase();
+        return dbPlate === scannedPlate;
+    });
+    
+    if (matched){
+        result.style.display = 'block'; result.className = 'match-result match-success';
+        title.innerHTML = '<i class="fas fa-check-circle"></i> تم العثور على السيارة في قاعدة البيانات';
+        det.innerHTML = `
+            <p><strong>اسم السائق:</strong> ${escapeHtml(matched.driverName)}</p>
+            <p><strong>المصلحة:</strong> ${escapeHtml(matched.position)}</p>
+            <p><strong>نوع السيارة:</strong> ${escapeHtml(matched.carName)}</p>
+            <p><strong>العلامة التجارية:</strong> ${escapeHtml(matched.brand)}</p>
+            <p><strong>هاتف:</strong> ${escapeHtml(matched.phoneNumber)}</p>
+            ${matched.note ? `<p><strong>ملاحظة:</strong> ${escapeHtml(matched.note)}</p>` : ''}
+        `;
+        preview.classList.add('match-found');
+    } else {
+        result.style.display = 'block'; result.className = 'match-result match-fail';
+        title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> غير مسجلة بقاعدة البيانات';
+        det.innerHTML = `<p>اللوحة <strong>${escapeHtml(cleaned)}</strong> غير موجودة في السجلات.</p>
+                         <p>يمكنك إضافتها عبر "إضافة سيارة جديدة".</p>`;
+        preview.classList.add('match-not-found');
+    }
+}
+
+/* تنظيف نص اللوحة: السماح بالأحرف العربية واللاتينية والأرقام، إزالة الضوضاء */
+function normalizePlateText(text){
+    if (!text) return '';
+    
+    // استبقاء أحرف عربية وحروف لاتينية وأرقام ومسافات قصيرة
+    let cleaned = text.replace(/[^0-9A-Za-z\u0600-\u06FF\s\-]/g,'').replace(/\s{2,}/g,' ').trim();
+    
+    // إزالة مسافات داخلية لجعل المقارنة أكثر مباشرة
+    cleaned = cleaned.replace(/\s+/g,'');
+    
+    // إذا كان الوضع الأولوية للاتينية، إزالة الأحرف العربية
+    if (currentPlateMode === 'latin') {
+        cleaned = cleaned.replace(/[^\x00-\x7F]/g, '');
+    }
+    // إذا كان الوضع الأولوية للعربية، إزالة الأحرف اللاتينية
+    else if (currentPlateMode === 'arabic') {
+        cleaned = cleaned.replace(/[A-Za-z]/g, '');
+    }
+    
+    return cleaned;
+}
+
+/* ===================== إعدادات التعرف البصري ===================== */
+function toggleOcrMode(mode){
+    currentOcrMode = mode;
+    let modeText = '';
+    switch(mode) {
+        case 'ara': modeText = 'العربية'; break;
+        case 'eng': modeText = 'الإنجليزية'; break;
+        case 'ara+eng': modeText = 'العربية والإنجليزية'; break;
+    }
+    document.getElementById('currentOcrMode').textContent = `الوضع الحالي: ${modeText}`;
+    showAlert(`تم تغيير وضع التعرف إلى ${modeText}`, 'success');
+}
+
+function togglePlateMode(mode){
+    currentPlateMode = mode;
+    let modeText = '';
+    switch(mode) {
+        case 'latin': modeText = 'الأرقام اللاتينية'; break;
+        case 'arabic': modeText = 'الأرقام العربية'; break;
+    }
+    document.getElementById('currentPlateMode').textContent = `الأولوية: ${modeText}`;
+    showAlert(`تم تغيير أولوية الأرقام إلى ${modeText}`, 'success');
+}
+
+function openPlateScanner(){
+    document.getElementById('plateScannerModal').style.display = 'flex';
+    document.getElementById('manualPlateInput').value = '';
+    document.getElementById('platePreview').textContent = '--- ---';
+    document.getElementById('matchResult').style.display = 'none';
+}
+
+/* ===================== الوضع الليلي ===================== */
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    document.getElementById('dark-mode-toggle').innerHTML = isDark ? 
+        '<i class="fas fa-sun"></i>' : 
+        '<i class="fas fa-moon"></i>';
+    localStorage.setItem('darkMode', isDark);
+}
+
+/* ===================== Utilities إضافية ===================== */
+/* التعامل مع رفع الصور input وضمان التوافق */
+document.getElementById('uploadImageInput').addEventListener('change', handleImageUpload);
+
+/* منع تكرار worker ثقيل عند إغلاق النافذة */
+window.addEventListener('beforeunload', ()=> { 
+    if (videoStream) videoStream.getTracks().forEach(t=>t.stop()); 
+});
+</script>
+</body>
+</html>
